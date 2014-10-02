@@ -1,4 +1,4 @@
-<img src="documentation/images/MCOS-logo.png" alt="Logo" height="250" width="500">
+<img src="documentation/images/cometos-logo.png" alt="Logo" height="250" width="500">
 =======
 
 CometOS is an operating system for x86 PCs, written in assembly language and C.
@@ -43,7 +43,7 @@ First obtain the latest iso image or build from the latest souce code. Note that
 
 Navagate to the project folder:
 ```
-cd MCOS
+cd CometOS
 ```
 
 You can clean the source tree by invoking:
