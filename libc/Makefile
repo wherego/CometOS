@@ -28,6 +28,7 @@ LIBK_CPFLAGS:=$(LIBK_CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
 
 FREEOBJS:=\
 $(ARCH_FREEOBJS) \
+init/__init_libc.o \
 stdio/printf.o \
 stdio/putchar.o \
 stdio/puts.o \
@@ -40,6 +41,7 @@ string/strlen.o \
 
 HOSTEDOBJS:=\
 $(ARCH_HOSTEDOBJS) \
+stdlib/exit.o \
 
 OBJS:=\
 $(FREEOBJS) \
@@ -47,7 +49,7 @@ $(HOSTEDOBJS) \
 
 LIBK_OBJS:=$(FREEOBJS:.o=.libk.o)
 
-BINARIES=libc.a libg.a libk.a
+BINARIES=libc.a libg.a libk.a $(ARCHDIR)/crt0.o $(ARCHDIR)/crti.o $(ARCHDIR)/crtn.o
 
 all: $(BINARIES)
 

@@ -1,160 +1,102 @@
-#include <kernel/idt.h>
-#include <kernel/io.h>
-#include <kernel/tty.h>
+#include <stdint.h>
+#include <string.h>
 
-void PANIC(registers_t regs){
-	unsigned int faulting_address;
-	__asm__ volatile("mov %%cr2, %0" : "=r" (faulting_address));
+#include "idt.h"
 
-	unsigned int cr2;
-	__asm__ volatile("mov %%cr2, %0" : "=b" (cr2));
-	int present   = (regs.err_code & 0x1); // Page not present
-	int rw = regs.err_code & 0x2;           // Write operation?
-	int us = regs.err_code & 0x4;           // Processor was in user-mode?
-	int reserved = regs.err_code & 0x8;     // Overwritten CPU-reserved bits of page entry?
-	int id = regs.err_code & 0x10;          // Caused by an instruction fetch?
+#define IDT_TYPE_INTERRUPT 0xE /* Interrupts disabled in eflags. */
+#define IDT_TYPE_TRAP 0xF      /* Interrupts unaffected in eflags. */
 
-   	switch(regs.number){
-		case 14: {
-					__asm__ volatile("cli");
-					terminal_writestring("Page Fault (");
-					if (present) 
-						terminal_writestring("present; ");
-					else
-						terminal_writestring("not-present; ");
-					if (rw) 
-						terminal_writestring("read-only; ");
-					if (us) 
-						terminal_writestring("user-mode; ");
-					if (reserved) 
-						terminal_writestring("reserved; ");
-					terminal_writestring("\b\b) at %x %x\n",&faulting_address,faulting_address);
-					terminal_writestring("cr2: %x\n",cr2);
-					
-					
-				}
-				while(1){}
-				break;
-		case 13: terminal_writestring("GPF  ");
-				while(1){}
-				break;
-		default:	terminal_writestring("faulting %d\n",regs.number);
-				break;
-	}
-	
+#define IDT_FLAG_PRESENT (1 << 7)
+#define IDT_FLAG_DPL_SHIFT 5
+#define IDT_FLAG_DPL_BITS 2
+#define IDT_FLAG_TYPE_SHIFT 0
+#define IDT_FLAG_TYPE_BITS 4
+
+struct idt_entry
+{
+	uint16_t handler_low;
+	uint16_t selector;
+	uint8_t ist;
+	uint8_t flags;
+	uint16_t handler_high;
+};
+
+struct idt_entry idt[256];
+
+void lidt(uintptr_t base, size_t limit)
+{
+	asm volatile ("subl $6, %%esp\n\t"
+	              "movw %w0, 0(%%esp)\n\t"
+	              "movl %1, 2(%%esp)\n\t"
+	              "lidt (%%esp)\n\t"
+	              "addl $6, %%esp" : : "rN"(limit), "r"(base));
 }
 
-void isr_handler(registers_t reg) {
-	int int_no = reg.number;// & 0xFF;
-	terminal_writestring("ISR\nNr: %d\n",int_no);
-	switch(int_no ){
-		case 14:	/* Page Fault */
-					PANIC(reg);
-					terminal_writestring("Page fault\n");
-					break;
-		case 0x80:  terminal_writestring("SYSCALL\n");
-				break;
-		default: PANIC(reg);
-					break;
-	}
-} 
-
-void irq_handler2(registers_t reg) {
-	if (reg.number >= 40)
-		outportb(0xA0, 0x20);
-	outportb(0x20, 0x20);
-	if (reg.number == 33){
-		unsigned char scancode = inportb(0x60);
-		//unsigned char KbKey c;
-		//c.c = scancodeToChar(scancode);
-		//c.code = scancodeToCode(scancode);
-		//keyboardHandler(scancode & 0x80,c);
-		terminal_writestring(scancode);
-	}
-} 
-
-void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
-    idt[num].base_lo = (base & 0xFFFF);
-    idt[num].base_hi = (base >> 16) & 0xFFFF;
-
-    idt[num].sel = sel;
-    idt[num].always0 = 0;
-    idt[num].flags =flags  | 0x60;
+void idt_format_normal_entry(struct idt_entry* entry,
+                             void (*handler)(void),
+                             uint8_t type,
+                             uint8_t rpl)
+{
+	entry->handler_low = (uintptr_t) handler >> 0 & 0xFFFF;
+	entry->selector = 0x08 /* Kernel Code Segment */;
+	entry->ist = 0;
+	entry->flags = IDT_FLAG_PRESENT |
+	               rpl << IDT_FLAG_DPL_SHIFT |
+	               type << IDT_FLAG_TYPE_SHIFT;
+	entry->handler_high = (uintptr_t) handler >> 16 & 0xFFFF;
 }
 
-void init_idt() {
-    idtp.limit = (sizeof (struct idt_entry) * 256) - 1;
-    idtp.base = (unsigned int)&idt;
-
-   // memset(&idt, 0, sizeof(struct idt_entry) * 256);
-
-	 outportb(0x20, 0x11);
-    outportb(0xA0, 0x11);
-    outportb(0x21, 0x20);
-    outportb(0xA1, 0x28);
-    outportb(0x21, 0x04);
-    outportb(0xA1, 0x02);
-    outportb(0x21, 0x01);
-    outportb(0xA1, 0x01);
-    outportb(0x21, 0x0);
-    outportb(0xA1, 0x0);
-  
-	idt_set_gate(0,(unsigned int)isr0,0x08,0x8E);
-	idt_set_gate(1,(unsigned int)isr1,0x08,0x8E);
-	idt_set_gate(2,(unsigned int)isr2,0x08,0x8E);
-	idt_set_gate(3,(unsigned int)isr3,0x08,0x8E);
-	idt_set_gate(4,(unsigned int)isr4,0x08,0x8E);
-	idt_set_gate(5,(unsigned int)isr5,0x08,0x8E);
-	idt_set_gate(6,(unsigned int)isr6,0x08,0x8E);
-	idt_set_gate(7,(unsigned int)isr7,0x08,0x8E);
-	idt_set_gate(8,(unsigned int)isr8,0x08,0x8E);
-	idt_set_gate(9,(unsigned int)isr9,0x08,0x8E);
-	idt_set_gate(10,(unsigned int)isr10,0x08,0x8E);
-	idt_set_gate(11,(unsigned int)isr11,0x08,0x8E);
-	idt_set_gate(12,(unsigned int)isr12,0x08,0x8E);
-	idt_set_gate(13,(unsigned int)isr13,0x08,0x8E);
-	idt_set_gate(14,(unsigned int)isr14,0x08,0x8E);
-	idt_set_gate(15,(unsigned int)isr15,0x08,0x8E);
-	idt_set_gate(16,(unsigned int)isr16,0x08,0x8E);
-	idt_set_gate(17,(unsigned int)isr17,0x08,0x8E);
-	idt_set_gate(18,(unsigned int)isr18,0x08,0x8E);
-	idt_set_gate(19,(unsigned int)isr19,0x08,0x8E);
-	idt_set_gate(20,(unsigned int)isr20,0x08,0x8E);
-	idt_set_gate(21,(unsigned int)isr21,0x08,0x8E);
-	idt_set_gate(22,(unsigned int)isr22,0x08,0x8E);
-	idt_set_gate(23,(unsigned int)isr23,0x08,0x8E);
-	idt_set_gate(24,(unsigned int)isr24,0x08,0x8E);
-	idt_set_gate(25,(unsigned int)isr25,0x08,0x8E);
-	idt_set_gate(26,(unsigned int)isr26,0x08,0x8E);
-	idt_set_gate(27,(unsigned int)isr27,0x08,0x8E);
-	idt_set_gate(28,(unsigned int)isr28,0x08,0x8E);
-	idt_set_gate(29,(unsigned int)isr29,0x08,0x8E);
-	idt_set_gate(30,(unsigned int)isr30,0x08,0x8E);
-	idt_set_gate(31,(unsigned int)isr31,0x08,0x8E);
-
-	idt_set_gate(128,(unsigned int)isr128,0x08,0x8E);
-
-	idt_set_gate(32,(unsigned int)irq0, 0x08, 0x8E);
-	idt_set_gate(33,(unsigned int)irq1, 0x08, 0x8E);
-	idt_set_gate(34,(unsigned int)irq2, 0x08, 0x8E);
-	idt_set_gate(35,(unsigned int)irq3, 0x08, 0x8E);
-	idt_set_gate(36,(unsigned int)irq4, 0x08, 0x8E);
-	idt_set_gate(37,(unsigned int)irq5, 0x08, 0x8E);
-	idt_set_gate(38,(unsigned int)irq6, 0x08, 0x8E);
-	idt_set_gate(39,(unsigned int)irq7, 0x08, 0x8E);
-	idt_set_gate(40,(unsigned int)irq8, 0x08, 0x8E);
-	idt_set_gate(41,(unsigned int)irq9, 0x08, 0x8E);
-	idt_set_gate(42,(unsigned int)irq10, 0x08, 0x8E);
-	idt_set_gate(43,(unsigned int)irq11, 0x08, 0x8E);
-	idt_set_gate(44,(unsigned int)irq12, 0x08, 0x8E);
-	idt_set_gate(45,(unsigned int)irq13, 0x08, 0x8E);
-	idt_set_gate(46,(unsigned int)irq14, 0x08, 0x8E);
-	idt_set_gate(47,(unsigned int)irq15, 0x08, 0x8E);
-	
-	
-    	void* start = idt;
-	void* end = (start + (( sizeof(struct idt_entry)*256)-1));
-	idt_entry_start = start;
-	idt_entry_end = end;
-	idt_load((unsigned int)&idtp);
+void idt_initialize()
+{
+	memset(&idt, 0, sizeof(idt));
+	idt_format_normal_entry(&idt[0], isr0, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[1], isr1, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[2], isr2, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[3], isr3, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[4], isr4, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[5], isr5, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[6], isr6, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[7], isr7, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[8], isr8, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[9], isr9, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[10], isr10, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[11], isr11, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[12], isr12, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[13], isr13, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[14], isr14, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[15], isr15, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[16], isr16, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[17], isr17, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[18], isr18, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[19], isr19, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[20], isr20, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[21], isr21, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[22], isr22, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[23], isr23, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[24], isr24, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[25], isr25, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[26], isr26, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[27], isr27, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[28], isr28, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[29], isr29, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[30], isr30, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[31], isr31, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[32], irq0, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[32], irq0, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[33], irq1, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[34], irq2, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[35], irq3, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[36], irq4, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[37], irq5, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[38], irq6, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[39], irq7, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[40], irq8, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[41], irq9, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[42], irq10, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[43], irq11, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[44], irq12, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[45], irq13, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[46], irq14, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[47], irq15, IDT_TYPE_INTERRUPT, 0x0);
+	lidt((uintptr_t) idt, sizeof(idt) - 1);
 }

@@ -2,22 +2,29 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
- 
+
 #include <kernel/tty.h>
-#include <kernel/io.h>
-#include <kernel/gdt.h>
-#include <kernel/irq.h>
-#include <kernel/kb.h>
-#include <kernel/isrs.h>
- 
-void kernel_early()
+
+#if defined(__i386__)
+#include "../arch/i386/idt.h"
+#include "../arch/i386/pic.h"
+#include <kernel/portio.h>
+#endif
+
+void kernel_early(void)
 {
-	gdt_initialize();
 	terminal_initialize();
-	init_idt();
 }
 
-void kernel_main()
+void kernel_main(void)
 {
-	terminal_writestring("Hello, Kernel World");
+	printf("Hello, kernel World!\n");
+
+#if defined(__i386__)
+	idt_initialize();
+	pic_initialize();
+	sti(); //turn on interupts
+#endif
+
+    for (;;); //loop
 }

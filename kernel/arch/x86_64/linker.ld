@@ -1,3 +1,5 @@
+OUTPUT_FORMAT(elf32-i386)
+
 /* The bootloader will look at this image and start execution at the symbol
    designated at the entry point. */
 ENTRY(_start)

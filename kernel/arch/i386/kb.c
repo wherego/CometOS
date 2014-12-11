@@ -1,6 +1,5 @@
-#include <kernel/io.h>
-#include <kernel/kb.h>
 #include <kernel/tty.h>
+#include <kernel/portio.h>
 
 unsigned char kbdus[128] =
 {
@@ -43,12 +42,12 @@ unsigned char kbdus[128] =
 };
 
 /* Handles the keyboard interrupt */
-void keyboard_handler(struct regs *r)
+void keyboard_handler(struct interrupt_context* int_ctx)
 {
     unsigned char scancode;
 
     /* Read from the keyboard's data buffer */
-    scancode = inportb(0x60);
+    scancode = inport8(0x60);
 
     /* If the top bit of the byte we read from the keyboard is
     *  set, that means that a key has just been released */
@@ -59,13 +58,18 @@ void keyboard_handler(struct regs *r)
     }
     else
     {
-        // Here, a key was just pressed
+        /* Here, a key was just pressed. Please note that if you
+        *  hold a key down, you will get repeated key press
+        *  interrupts. */
+
+        /* Just to show you how this works, we simply translate
+        *  the keyboard scancode into an ASCII value, and then
+        *  display it to the screen. You can get creative and
+        *  use some flags to see if a shift is pressed and use a
+        *  different layout, or you can add another 128 entries
+        *  to the above layout to correspond to 'shift' being
+        *  held. If shift is held using the larger lookup table,
+        *  you would add 128 to the scancode when you look for it */
         terminal_putchar(kbdus[scancode]);
     }
-}
-
-/* Installs the keyboard handler into IRQ1 */
-void keyboard_install()
-{
-    irq_install_handler(1, keyboard_handler);
 }
