@@ -25,6 +25,24 @@ struct interrupt_context
 	uint32_t ss;  /* If (cs & 0x3) != 0 */
 };
 
+
+
+void *irq_routines[16] =
+{
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+
+void irq_install_handler(int irq, void (*handler)(struct interrupt_context* int_ctx))
+{
+    irq_routines[irq] = handler;
+}
+
+void irq_uninstall_handler(int irq)
+{
+    irq_routines[irq] = 0;
+}
+
 void isr_handler(struct interrupt_context* int_ctx)
 {
 	(void) int_ctx;
@@ -39,6 +57,14 @@ void irq_handler(struct interrupt_context* int_ctx)
 		return;
 	if ( irq == 15 && !(pic_read_isr() & (1 << 15)) )
 		return pic_eoi_master();
+
+	//run irq_routines
+	void (*handler)(struct interrupt_context* int_ctx);
+	handler = irq_routines[int_ctx->int_no - 32];
+	if (handler)
+		{
+			handler(int_ctx);
+		}
 
 	(void) int_ctx;
 
