@@ -153,25 +153,3 @@ unsigned char time_get(int type)
 		break;
 	}
 }
-
-unsigned int hex2dec(unsigned int hex)
-{
-      unsigned int base = 10;
-      unsigned int sum = 0;
-      int i = 0;
-      int max = 1;
-      while (base<hex)  {
-            max++;
-            base*=10;
-      }
-      base = 10;
-      while (i<max){
-            int x = hex%base;
-            x *= pow(16,i++);
-            sum+=x;
-            hex-=x;
-            if (hex<10) break;
-            hex/=10;
-      }
-      return sum;
-}
