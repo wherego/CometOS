@@ -1,4 +1,4 @@
-<img src="documentation/images/cometos-logo.png" alt="Logo" height="250" width="500">
+<img src="documentation/images/cometos-logo.png" alt="Logo" height="250" width="600">
 =======
 
 CometOS is an operating system for x86 PCs, written in assembly language and C.

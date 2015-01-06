@@ -70,6 +70,7 @@ _start:
 	call kernel_main
 
 	# Hang if kernel_main unexpectedly returns.
+	call kernel_hang
 	cli
 	hlt
 .Lhang:

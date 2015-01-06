@@ -1,0 +1,6 @@
+#ifndef _MYOS_ARCH_I386_PAGING_H
+#define _MYOS_ARCH_I386_PAGING_H
+
+
+
+#endif

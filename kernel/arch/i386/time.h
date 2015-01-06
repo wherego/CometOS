@@ -3,6 +3,6 @@
 
 char time_get(char type);
 unsigned int get_update_in_progress_flag();
-unsigned char get_RTC_register(int reg);
+unsigned int get_RTC_register(int reg);
 
 #endif

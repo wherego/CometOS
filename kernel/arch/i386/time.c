@@ -122,7 +122,7 @@ void read_rtc()
       }
 }
 
-unsigned char time_get(int type)
+unsigned int time_get(int type)
 {
 	read_rtc();
 

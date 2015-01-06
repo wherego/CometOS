@@ -7,8 +7,7 @@ void terminal_initialize(void);
 void terminal_putchar(char c);
 void terminal_write(const char* data, size_t size);
 void terminal_writestring(const char* data);
-void terminal_destroy(int row, int column);
-void terminal_delete();
-void terminal_backspace();
+void terminal_drawCursor(int x , int y);
+void terminal_cursorPos(int row, int column);
 
 #endif

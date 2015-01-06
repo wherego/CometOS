@@ -4,5 +4,6 @@
 void pit_handler(void);
 void Sleep(uint32_t delay);
 void pit_install(void);
+void pit_phase(int hz);
 
 #endif

@@ -36,7 +36,6 @@ void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
 {
 	const size_t index = y * VGA_WIDTH + x;
 	terminal_buffer[index] = make_vgaentry(c, color);
-	terminal_cursor();
 }
 
 static void terminal_scroll()
@@ -58,26 +57,26 @@ static void terminal_newline()
 		terminal_row++;
 }
 
-void terminal_cursor() {
-	unsigned short cursorLocation = terminal_row * 80 + (terminal_column+1);
-	outport8(0x3D4, 14);                 
-	outport8(0x3D5, cursorLocation >> 8); 
-	outport8(0x3D4, 15);                  
-	outport8(0x3D5, cursorLocation); 
-} 
-
 void terminal_putchar(char c)
 {
 	if ( c == '\n' )
 		terminal_newline();
 	else if ( c == '\r' )
 		terminal_column = 0;
+	else if ( c == '\b' )
+	{
+		terminal_column--;
+		terminal_writestring(" ");
+		terminal_column--;
+		terminal_drawCursor(terminal_row, terminal_column); //remove
+	}
 	else
 	{
 		if ( terminal_column == VGA_WIDTH )
 			terminal_newline();
 		terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
 		terminal_column++;
+		terminal_drawCursor(terminal_row, terminal_column); //revome
 	}
 }
 
@@ -92,34 +91,16 @@ void terminal_writestring(const char* data)
 	terminal_write(data, strlen(data));
 }
 
-//TODO fix destroy
-void terminal_destroy(int row, int column)
+void terminal_drawCursor(int row , int column) {
+	unsigned short cursorLocation = row * 80 + (column);
+	outport8(0x3D4, 14);                 
+	outport8(0x3D5, cursorLocation >> 8); 
+	outport8(0x3D4, 15);                  
+	outport8(0x3D5, cursorLocation); 
+} 
+
+void terminal_cursorPos(int row, int column)
 {
 	terminal_row = row;
 	terminal_column = column;
-	terminal_putchar(" ");
-}
-
-void terminal_delete()
-{
-	//TODO add delete
-}
-
-//TODO fix backspace
-void terminal_backspace()
-{
-	terminal_column--;
-	if (terminal_column<0){
-		terminal_column = 0;
-		terminal_row--;
-		if (terminal_row <0) terminal_row =0;
-	}
-	terminal_writestring(" ");
-	terminal_column--;
-	if (terminal_column<0){
-		terminal_column = 0;
-		terminal_row--;
-		if (terminal_row <0) terminal_row =0;
-	}
-	terminal_cursor();
 }

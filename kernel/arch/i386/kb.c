@@ -63,12 +63,6 @@ void keyboard_handler(struct interrupt_context* int_ctx)
         kb_ltmp |= 1;
         outport8(0x60,kb_ltmp);
       break;
-
-      case 0x0E:
-        //BackSpace
-        terminal_backspace();
-        return;
-      break;
       
       case 60: /* F12 */
         //reboot();
@@ -97,15 +91,15 @@ void keyboard_handler(struct interrupt_context* int_ctx)
         }
 
       //TODO add uppercase
-      //store raw buffer data
+      //store buffer data
       if (kb_count < KB_MAXBUFFER)
       {
-        kb_buffer[kb_count_raw++] = scancode;
+        kb_buffer[kb_count_raw++] = kbdus[scancode];
       }
       else
       {
         kb_count = 0;
-        kb_buffer[kb_count] = scancode;
+        kb_buffer[kb_count] = kbdus[scancode];
       }
 
       //TODO add echo toggle
@@ -117,4 +111,6 @@ void keyboard_handler(struct interrupt_context* int_ctx)
 void keyboard_install()
 {
     irq_install_handler(1, keyboard_handler);
+
+    printf("KB  ----------------------- [OK]\n"); //remove
 }

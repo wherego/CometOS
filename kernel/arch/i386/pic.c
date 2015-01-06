@@ -61,4 +61,6 @@ void pic_initialize()
 	outport8(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
 	outport8(PIC_MASTER + PIC_DATA, master_mask);
 	outport8(PIC_SLAVE + PIC_DATA, slave_mask);
+
+	printf("PIC ----------------------- [OK]\n"); //remove
 }
