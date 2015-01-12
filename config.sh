@@ -6,6 +6,8 @@ export HOST=${HOST:-$(./default-host.sh)}
 
 export PATH="$HOME/opt/cross/bin:$PATH"
 
+export GCC_COLORS='error=01;31:warning=01;33:note=01;34:caret=01;32:locus=01:quote=01'
+
 export AR=${HOST}-ar
 export AS=${HOST}-as
 export CC=${HOST}-gcc
