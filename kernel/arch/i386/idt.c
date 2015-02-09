@@ -95,7 +95,7 @@ void idt_initialize()
 	idt_format_normal_entry(&idt[42], irq10, IDT_TYPE_INTERRUPT, 0x0);
 	idt_format_normal_entry(&idt[43], irq11, IDT_TYPE_INTERRUPT, 0x0);
 	idt_format_normal_entry(&idt[44], irq12, IDT_TYPE_INTERRUPT, 0x0);
-	idt_format_normal_entry(&idt[45], irq13, IDT_TYPE_INTERRUPT, 0x0);
+	idt_format_normal_entry(&idt[45], irq13, IDT_TYPE_INTERRUPT, 0x8E);
 	idt_format_normal_entry(&idt[46], irq14, IDT_TYPE_INTERRUPT, 0x0);
 	idt_format_normal_entry(&idt[47], irq15, IDT_TYPE_INTERRUPT, 0x0);
 	lidt((uintptr_t) idt, sizeof(idt) - 1);

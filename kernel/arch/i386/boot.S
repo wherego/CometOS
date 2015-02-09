@@ -67,6 +67,7 @@ _start:
 	call _init
 
 	# Transfer control to the main kernel.
+	push %ebx #Push multiboot info.
 	call kernel_main
 
 	# Hang if kernel_main unexpectedly returns.

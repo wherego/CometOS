@@ -66,9 +66,9 @@ void terminal_putchar(char c)
 	else if ( c == '\b' )
 	{
 		terminal_column--;
-		terminal_writestring(" ");
+		terminal_writestring(' ');
 		terminal_column--;
-		terminal_drawCursor(terminal_row, terminal_column); //remove
+		terminal_drawcursor(terminal_row, terminal_column); //remove
 	}
 	else
 	{
@@ -76,7 +76,7 @@ void terminal_putchar(char c)
 			terminal_newline();
 		terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
 		terminal_column++;
-		terminal_drawCursor(terminal_row, terminal_column); //revome
+		terminal_drawcursor(terminal_row, terminal_column); //revome
 	}
 }
 
@@ -91,16 +91,21 @@ void terminal_writestring(const char* data)
 	terminal_write(data, strlen(data));
 }
 
-void terminal_drawCursor(int row , int column) {
+void terminal_drawcursor(int row , int column) {
 	unsigned short cursorLocation = row * 80 + (column);
 	outport8(0x3D4, 14);                 
 	outport8(0x3D5, cursorLocation >> 8); 
 	outport8(0x3D4, 15);                  
 	outport8(0x3D5, cursorLocation); 
-} 
+}
 
-void terminal_cursorPos(int row, int column)
+void terminal_displaycursor(state)
 {
-	terminal_row = row;
-	terminal_column = column;
+	//TODO on or off
+}
+
+void terminal_cursorpos(int row, int column)
+{
+		terminal_row = row;
+		terminal_column = column;
 }

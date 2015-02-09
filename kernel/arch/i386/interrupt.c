@@ -27,10 +27,46 @@ struct interrupt_context
 
 
 
-void *irq_routines[16] =
+void *irq_routines[16];
+void *isr_routines[32];
+
+unsigned char *exception_messages[] =
 {
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0
+    "Division By Zero",
+    "Debug",
+    "Non Maskable Interrupt",
+    "Breakpoint",
+    "Into Detected Overflow",
+    "Out of Bounds",
+    "Invalid Opcode",
+    "No Coprocessor",
+
+    "Double Fault",
+    "Coprocessor Segment Overrun",
+    "Bad TSS",
+    "Segment Not Present",
+    "Stack Fault",
+    "General Protection Fault",
+    "Page Fault",
+    "Unknown Interrupt",
+
+    "Coprocessor Fault",
+    "Alignment Check",
+    "Machine Check",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved"
 };
 
 void irq_install_handler(int irq, void (*handler)(struct interrupt_context* int_ctx))
@@ -43,9 +79,36 @@ void irq_uninstall_handler(int irq)
     irq_routines[irq] = 0;
 }
 
+void isr_install_handler(int isr, void (*handler)(struct interrupt_context* int_ctx))
+{
+    isr_routines[isr] = handler;
+}
+
+void isr_uninstall_handler(int isr)
+{
+    isr_routines[isr] = 0;
+}
+
 void isr_handler(struct interrupt_context* int_ctx)
 {
+	//run irq_routines
+	void (*handler)(struct interrupt_context* int_ctx);
+	handler = isr_routines[int_ctx->int_no];
+	if (handler)
+		{
+			handler(int_ctx);
+		}
+
+    else if (int_ctx->int_no < 32)
+    {
+    	printf(exception_messages[int_ctx->int_no]);
+    	printf("\nFult number:%i\n", int_ctx->int_no);
+    	printf("\n");
+        printf("System Halted!\n");
+    }
+
 	(void) int_ctx;
+	asm("hlt");
 }
 
 void irq_handler(struct interrupt_context* int_ctx)
