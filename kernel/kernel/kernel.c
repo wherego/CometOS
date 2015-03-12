@@ -5,6 +5,7 @@
 
 #include <kernel/multiboot.h>
 #include <kernel/tty.h>
+#include <kernel/vga.h>
 
 #if defined(__i386__)
 #include "../arch/i386/idt.h"
@@ -32,7 +33,7 @@ void kernel_main(struct multiboot *mboot_ptr)
 	pic_initialize();
 	keyboard_install();
 	pit_install();
-	paging_initialize();
+	paging_initialize(mboot_ptr->mem_upper);
 	sti(); //turn on interupts
 	printf("Interupts On\n");
 #endif
@@ -68,7 +69,9 @@ void kernel_main(struct multiboot *mboot_ptr)
 	printf("VBE of: 0x%x ", mboot_ptr->vbe_interface_off);
 	printf("VBE le: 0x%x\n", mboot_ptr->vbe_interface_len);
 
-	//printf("addr:%i", *get_page(0x10, 1, 0));
+	//uint32_t *ptr = (uint32_t*)0xA0000000;
+	//uint32_t do_page_fault = *ptr;
+	//printf(do_page_fault);   
 
     for (;;); //main loop
 }

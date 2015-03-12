@@ -1,5 +1,5 @@
-#ifndef _MYOS_ARCH_I386_VFS_H
-#define _MYOS_ARCH_I386_VFS_H
+#ifndef _COMETOS_ARCH_I386_VFS_H
+#define _COMETOS_ARCH_I386_VFS_H
 
 #define FS_FILE        0x01
 #define FS_DIRECTORY   0x02

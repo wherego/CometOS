@@ -15,7 +15,7 @@ void terminal_initialize(void)
 {
 	terminal_row = 0;
 	terminal_column = 0;
-	terminal_color = make_color(COLOR_LIGHT_GREY, COLOR_BLACK);
+	terminal_color = make_color(COLOR_WHITE, COLOR_BLUE);
 	terminal_buffer = VGA_MEMORY;
 	for ( size_t y = 0; y < VGA_HEIGHT; y++ )
 	{
@@ -66,7 +66,7 @@ void terminal_putchar(char c)
 	else if ( c == '\b' )
 	{
 		terminal_column--;
-		terminal_writestring(' ');
+		terminal_writestring(" ");
 		terminal_column--;
 		terminal_drawcursor(terminal_row, terminal_column); //remove
 	}

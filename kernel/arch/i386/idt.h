@@ -1,5 +1,5 @@
-#ifndef _MYOS_ARCH_I386_IDT_H
-#define _MYOS_ARCH_I386_IDT_H
+#ifndef _COMETOS_ARCH_I386_IDT_H
+#define _COMETOS_ARCH_I386_IDT_H
 
 void isr0();
 void isr1();

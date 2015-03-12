@@ -8,7 +8,7 @@ void abort(void)
 #if __STDC_HOSTED__
 	// TODO: Properly implement abort().
 	exit(1);
-#elif defined(__is_myos_kernel)
+#elif defined(__is_cometos_kernel)
 	// TODO: Add proper kernel panic.
 	//printf("\n\n*** KERNEL PANIC ***\nError:%s\nTime:%i:%i:%i\nFile:%s\nLine:%i\n********************\n\n", error_message, time_get(2), time_get(1), time_get(0), file, line);
 	while ( 1 ) { }
