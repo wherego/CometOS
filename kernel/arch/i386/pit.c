@@ -1,4 +1,5 @@
 #include <kernel/portio.h>
+#include "../arch/i386/log.h"
 
 long timer_ticks = 0;
 unsigned long ticker = 0;
@@ -32,5 +33,5 @@ void pit_install(void)
     irq_install_handler(0, pit_handler);
 	pit_phase(100); /* 100Hz */
 
-    printf("PIT ----------------------- [OK]\n"); //remove
+    log_print(NOTICE, "PIT");
 }

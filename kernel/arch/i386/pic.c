@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 #include <kernel/portio.h>
+#include "../arch/i386/log.h"
 
 const uint16_t PIC_MASTER = 0x20;
 const uint16_t PIC_SLAVE = 0xA0;
@@ -62,5 +63,5 @@ void pic_initialize()
 	outport8(PIC_MASTER + PIC_DATA, master_mask);
 	outport8(PIC_SLAVE + PIC_DATA, slave_mask);
 
-	printf("PIC ----------------------- [OK]\n"); //remove
+	log_print(NOTICE, "PIC");
 }

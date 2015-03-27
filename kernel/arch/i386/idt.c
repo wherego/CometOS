@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <string.h>
+#include "../arch/i386/log.h"
 
 #include "idt.h"
 
@@ -100,5 +101,5 @@ void idt_initialize()
 	idt_format_normal_entry(&idt[47], irq15, IDT_TYPE_INTERRUPT, 0x0);
 	lidt((uintptr_t) idt, sizeof(idt) - 1);
 
-	printf("IDT ----------------------- [OK]\n"); //remove
+	log_print(NOTICE, "IDT");
 }

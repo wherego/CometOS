@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <stdio.h>
+#include "../arch/i386/log.h"
 
 #include "pic.h"
 
@@ -101,10 +101,9 @@ void isr_handler(struct interrupt_context* int_ctx)
 
     else if (int_ctx->int_no < 32)
     {
-    	printf(exception_messages[int_ctx->int_no]);
-    	printf("\nFult number:%i\n", int_ctx->int_no);
-    	printf("\n");
-        printf("System Halted!\n");
+    	log_print(CRIT, exception_messages[int_ctx->int_no]);
+    	log_print(CRIT, "\nFult number:%i\n\n", int_ctx->int_no);
+        log_print(CRIT, "System Halted!\n");
     }
 
 	(void) int_ctx;

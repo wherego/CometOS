@@ -2,6 +2,8 @@
 #include <kernel/portio.h>
 #include <kernel/kbdus.h>
 
+#include "../arch/i386/log.h"
+
 #define KB_SCANCODE 0x60
 #define KB_BRAKECODE 0x80
 #define KB_MAXBUFFER 255
@@ -112,5 +114,5 @@ void keyboard_install()
 {
     irq_install_handler(1, keyboard_handler);
 
-    printf("KB  ----------------------- [OK]\n"); //remove
+    log_print(NOTICE, "Keyboard");
 }

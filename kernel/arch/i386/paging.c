@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
+#include "../arch/i386/log.h"
 
 #include "../arch/i386/paging.h"
 #include <kernel/portio.h>
@@ -109,7 +109,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable)
        uint32_t idx = first_frame();
        if (idx == (uint32_t)-1)
        {
-           printf("No free frames!");
+           log_print(ERROR, "No free frames!");
        }
        set_frame(idx*0x1000);
        page->present = 1;
@@ -138,7 +138,6 @@ void paging_initialize(uint32_t  mem_upper)
    nframes = mem_upper / 4;
    frames = (uint32_t*)kmalloc(INDEX_FROM_BIT(nframes));
    memset(frames, 0, INDEX_FROM_BIT(nframes));
-   printf("frame:%x nframes:%x\n", frames, nframes);   //remove
 
    kernel_directory = (page_directory_t*)kmalloc_a(sizeof(page_directory_t));
    memset(kernel_directory, 0, sizeof(page_directory_t));
@@ -151,11 +150,9 @@ void paging_initialize(uint32_t  mem_upper)
        i += 0x1000;
    }
 
-   printf("kernel_directory:%x\n", kernel_directory);    //remove
-
    isr_install_handler(14, page_fault);
    switch_page_directory(kernel_directory);
-   printf("PAGING -------------------- [OK]\n"); //remove
+   log_print(NOTICE, "Paging");
 }
 
 void switch_page_directory(page_directory_t *dir)
@@ -192,7 +189,7 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir)
 
 void page_fault(void)
 {
-   printf("Page fault!");
+   log_print(ERROR, "Page fault!");
    asm("hlt");
 } 
 

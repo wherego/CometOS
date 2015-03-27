@@ -15,6 +15,7 @@
 #include "../arch/i386/paging.h"
 #include "../arch/i386/draw.h"
 #include "../arch/i386/vfs.h"
+#include "../arch/i386/log.h"
 #include <kernel/portio.h>
 #endif
 
@@ -35,39 +36,13 @@ void kernel_main(struct multiboot *mboot_ptr)
 	pit_install();
 	paging_initialize(mboot_ptr->mem_upper);
 	sti(); //turn on interupts
-	printf("Interupts On\n");
+	log_print(INFO, "Interupts On\n");
 #endif
 
-	printf("CometOS ver 0.0.0  -  ");
-	printf("time:%i:%i:%i\n",time_get(2), time_get(1), time_get(0));
+	multiboot_print(mboot_ptr);
+	printf("--------------------------------------------------\n");
+	printf("CometOS ver 0.0.0  -  time:%i:%i:%i\n",time_get(2), time_get(1), time_get(0));
 	printf("Hello, kernel World!\n\n");
-
-	printf("Multiboot Data:\n");
-	printf("MULTIBOOT header at 0x%x:\n", (uintptr_t)mboot_ptr);
-	printf("Flags : 0x%x ", mboot_ptr->flags);
-	printf("Mem Lo: 0x%x ", mboot_ptr->mem_lower);
-	printf("Mem Hi: 0x%x ", mboot_ptr->mem_upper);
-	printf("Boot d: 0x%x\n", mboot_ptr->boot_device);
-	printf("cmdlin: 0x%x ", mboot_ptr->cmdline);
-	printf("Mods : 0x%x ", mboot_ptr->mods_count);
-	printf("Addr : 0x%x ", mboot_ptr->mods_addr);
-	printf("Syms : 0x%x\n", mboot_ptr->num);
-	printf("Syms : 0x%x ", mboot_ptr->size);
-	printf("Syms : 0x%x ", mboot_ptr->addr);
-	printf("Syms : 0x%x ", mboot_ptr->shndx);
-	printf("MMap : 0x%x\n", mboot_ptr->mmap_length);
-	printf("Addr : 0x%x ", mboot_ptr->mmap_addr);
-	printf("Drives: 0x%x ", mboot_ptr->drives_length);
-	printf("Addr : 0x%x ", mboot_ptr->drives_addr);
-	printf("Config: 0x%x\n", mboot_ptr->config_table);
-	printf("Loader: 0x%x ", mboot_ptr->boot_loader_name);
-	printf("APM : 0x%x ", mboot_ptr->apm_table);
-	printf("VBE Co: 0x%x ", mboot_ptr->vbe_control_info);
-	printf("VBE Mo: 0x%x\n", mboot_ptr->vbe_mode_info);
-	printf("VBE In: 0x%x ", mboot_ptr->vbe_mode);
-	printf("VBE se: 0x%x ", mboot_ptr->vbe_interface_seg);
-	printf("VBE of: 0x%x ", mboot_ptr->vbe_interface_off);
-	printf("VBE le: 0x%x\n", mboot_ptr->vbe_interface_len);
 
 	//uint32_t *ptr = (uint32_t*)0xA0000000;
 	//uint32_t do_page_fault = *ptr;
@@ -78,5 +53,5 @@ void kernel_main(struct multiboot *mboot_ptr)
 
 void kernel_hang(void)
 {
-	printf("Kernel hlt");
+	log_print(CRIT, "Kernel hlt");
 }
