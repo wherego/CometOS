@@ -106,6 +106,13 @@ void terminal_displaycursor(state)
 
 void terminal_cursorpos(int row, int column)
 {
-		terminal_row = row;
-		terminal_column = column;
+		if (!row == -1)
+		{
+			terminal_row = row;
+		}
+
+		if (!column == -1)
+		{
+			terminal_column = column;
+		}
 }

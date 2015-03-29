@@ -7,6 +7,8 @@
 #include <stdint.h>
 #endif
 
+#include <kernel/tty.h>
+#include <kernel/vga.h>
 #include "../arch/i386/log.h"
 #include "../arch/i386/time.h"
 
@@ -138,11 +140,17 @@ int log_print(enum debug_status status, const char* restrict format, ...)
 	debug_msg = "";
 	debug_msg = c_messages[status];
 
-	if (status = 0)
+	if (status == 0)
 	{
-		//[ok]
+		printf("[");
+		terminal_setcolor(make_color(COLOR_GREEN, COLOR_BLACK));
+		printf("OK");
+		terminal_setcolor(make_color(COLOR_LIGHT_GREY, COLOR_BLACK));
+		printf("]");
+		printf(" [%i.%i:%i:%d] %s\n", time_get(2), time_get(1), time_get(0), format, buffer);
 	}
-
-	printf("[%i.%i:%i:%d] %s\n", time_get(2), time_get(1), time_get(0), format, buffer);
-	return 1;
+	else
+	{
+		printf("[%i.%i:%i:%d] %s\n", time_get(2), time_get(1), time_get(0), format, buffer);
+	}
 }
