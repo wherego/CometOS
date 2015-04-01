@@ -35,6 +35,11 @@ uint32_t kmalloc_p(uint32_t sz, uint32_t *phys);
 uint32_t kmalloc_ap(uint32_t sz, uint32_t *phys);
 uint32_t kmalloc(uint32_t sz);
 
+void dma_frame(page_t * page, int, int, uintptr_t);
+
+uintptr_t memory_use();
+uintptr_t memory_total();
+
 void page_fault(void);
 
 #endif

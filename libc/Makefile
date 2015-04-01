@@ -30,7 +30,6 @@ FREEOBJS:=\
 $(ARCH_FREEOBJS) \
 init/__init_libc.o \
 stdio/printf.o \
-stdio/printd.o \
 stdio/putchar.o \
 stdio/puts.o \
 stdlib/abort.o \

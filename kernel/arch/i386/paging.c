@@ -1,36 +1,35 @@
 #include <stdint.h>
 #include <string.h>
-#include "../arch/i386/log.h"
 
+#include "../arch/i386/log.h"
 #include "../arch/i386/paging.h"
 #include <kernel/portio.h>
 
 #define INDEX_FROM_BIT(b) (b / 0x20)
 #define OFFSET_FROM_BIT(b) (b % 0x20)
 
-extern uint32_t end;
-uint32_t placement_address = (uint32_t)&end;
+extern void *end;
+uintptr_t placement_pointer = (uintptr_t)&end;
 
 uint32_t *frames;
 uint32_t nframes;
 
 page_directory_t *kernel_directory=0;
-
 page_directory_t *current_directory=0;
 
 uint32_t kmalloc_int(uint32_t sz, int align, uint32_t *phys)
 {
-    if (align == 1 && (placement_address & 0xFFFFF000) )
+    if (align == 1 && (placement_pointer & 0xFFFFF000) )
     {
-        placement_address &= 0xFFFFF000;
-        placement_address += 0x1000;
+        placement_pointer &= 0xFFFFF000;
+        placement_pointer += 0x1000;
     }
     if (phys)
     {
-        *phys = placement_address;
+        *phys = placement_pointer;
     }
-    uint32_t tmp = placement_address;
-    placement_address += sz;
+    uint32_t tmp = placement_pointer;
+    placement_pointer += sz;
     return tmp;
 }
 
@@ -78,6 +77,15 @@ static uint32_t test_frame(uint32_t frame_addr)
    return (frames[idx] & (0x1 << off));
 }
 
+void dma_frame(page_t *page, int is_kernel, int is_writeable, uintptr_t address)
+{
+  /* Page this address directly */
+  page->present = 1;
+  page->rw = (is_writeable) ? 1 : 0;
+  page->user = (is_kernel) ? 0 : 1;
+  page->frame = address / 0x1000;
+}
+
 static uint32_t first_frame()
 {
    uint32_t i, j;
@@ -96,6 +104,32 @@ static uint32_t first_frame()
            }
        }
    }
+}
+
+uintptr_t memory_use()
+{
+  uintptr_t ret = 0;
+  uint32_t i, j;
+
+  for (i = 0; i < INDEX_FROM_BIT(nframes); ++i)
+  {
+    for (j = 0; j < 32; ++j)
+    {
+      uint32_t testFrame = 0x1 << j;
+
+      if (frames[i] & testFrame)
+      {
+        ret++;
+      }
+    }
+  }
+
+  return ret * 4;
+}
+
+uintptr_t memory_total()
+{
+  return nframes * 4;
 }
 
 void alloc_frame(page_t *page, int is_kernel, int is_writeable)
@@ -144,7 +178,7 @@ void paging_initialize(uint32_t  mem_upper)
    current_directory = kernel_directory;
 
    int i = 0;
-   while (i < placement_address)
+   while (i < placement_pointer)
    {
        alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
        i += 0x1000;
@@ -189,7 +223,9 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir)
 
 void page_fault(void)
 {
-   log_print(ERROR, "Page fault!");
-   asm("hlt");
-} 
-
+  uint32_t faulting_address;
+  asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
+  log_print(ERROR, "Page fault! at: 0x%x", faulting_address);
+  asm("hlt");
+}
+//heap_end = (placement_pointer + 0x1000) & ~0xFFF;

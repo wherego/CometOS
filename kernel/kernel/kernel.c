@@ -19,8 +19,6 @@
 #include <kernel/portio.h>
 #endif
 
-#define NULL ((void *)0UL)
-
 void kernel_early(void)
 {
 	terminal_initialize();
@@ -39,14 +37,26 @@ void kernel_main(struct multiboot *mboot_ptr)
 	log_print(INFO, "Interupts On\n");
 #endif
 
+	//#ifdef DEBUG
 	multiboot_print(mboot_ptr);
 	printf("--------------------------------------------------\n");
+	//#endif
+
 	printf("CometOS ver 0.0.0  -  time:%i:%i:%i\n",time_get(2), time_get(1), time_get(0));
 	printf("Hello, kernel World!\n\n");
 
 	//uint32_t *ptr = (uint32_t*)0xA0000000;
 	//uint32_t do_page_fault = *ptr;
-	//printf(do_page_fault);   
+	//printf(do_page_fault);
+
+	uint32_t a = kmalloc(8);
+	printf("a: %x", a);
+
+	uint32_t b = kmalloc(8);
+	printf("b: %x", b);
+
+	uint32_t c = kmalloc(8);
+	printf("c: %x", c);
 
     for (;;); //main loop
 }

@@ -21,6 +21,9 @@ export INCLUDEDIR=$PREFIX/include
 export CFLAGS='-O2 -g'
 export CPPFLAGS=''
 
+export QEMU_DEBUG=""
+export GCC_DEBUG=""
+
 # Configure the cross-compiler to use the desired system root.
 export CC="$CC --sysroot=$PWD/sysroot"
 

@@ -2,18 +2,20 @@
 set -e
 . ./iso.sh
 
-DEBUG=""
-
 while test $# -gt 0; do
     case "$1" in
-        -d|--quick)
-            DEBUG="-s -S"
+        -s|--quick)
+            QEMU_DEBUG="-s -S"
             break
             ;;
+	-d|--quick)
+            GCC_DEBUG="-d"
+            break
+	    ;;
         *)
             break
             ;;
     esac
 done
 
-qemu-system-$(./target-triplet-to-arch.sh $HOST) $DEBUG -cdrom cometos.iso
+qemu-system-$(./target-triplet-to-arch.sh $HOST) $QEMU_DEBUG -cdrom cometos.iso
