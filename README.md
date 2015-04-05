@@ -10,13 +10,22 @@ Currently supported elements:
 - grub BootLoader
 - Printing text to screen
 - C support
+- keybord input
+- IRQ's
+- Paging
+- Timer
+- Time and date
+- VFS
 
 Todo elements:
 
-- IRQ's
-- keybord input
-- Command setup
-- Bootloader
+- User space
+- Multitasking
+- File system
+- Tasking
+- System calls
+- VGA drivers
+- Shell
 
 ## Plugins used
 
@@ -62,8 +71,3 @@ You can run quem emulator quickly by invoking:
 ```
 
 If you do not have permition to run the following files use the *chmod +x* command to alow access.
-
-Testing your operating system on Real Hardware:
-```
-sudo dd if=myos.iso of=/dev/sdx && sync
-```
