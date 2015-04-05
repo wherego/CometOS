@@ -43,7 +43,7 @@ void insert_ordered_array(type_t item, ordered_array_t *array)
     uint32_t iterator = 0;
     while (iterator < array->size && array->less_than(array->array[iterator], item))
         iterator++;
-    if (iterator == array->size) // just add at the end of the array.
+    if (iterator == array->size)
         array->array[array->size++] = item;
     else
     {
