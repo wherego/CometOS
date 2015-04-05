@@ -3,55 +3,20 @@
 
 #include "../arch/i386/log.h"
 #include "../arch/i386/paging.h"
+#include "../arch/i386/heap.h"
 #include <kernel/portio.h>
 
 #define INDEX_FROM_BIT(b) (b / 0x20)
 #define OFFSET_FROM_BIT(b) (b % 0x20)
 
-extern void *end;
-uintptr_t placement_pointer = (uintptr_t)&end;
+extern uint32_t placement_address;
+extern heap_t *kheap;
 
 uint32_t *frames;
 uint32_t nframes;
 
 page_directory_t *kernel_directory=0;
 page_directory_t *current_directory=0;
-
-uint32_t kmalloc_int(uint32_t sz, int align, uint32_t *phys)
-{
-    if (align == 1 && (placement_pointer & 0xFFFFF000) )
-    {
-        placement_pointer &= 0xFFFFF000;
-        placement_pointer += 0x1000;
-    }
-    if (phys)
-    {
-        *phys = placement_pointer;
-    }
-    uint32_t tmp = placement_pointer;
-    placement_pointer += sz;
-    return tmp;
-}
-
-uint32_t kmalloc_a(uint32_t sz)
-{
-    return kmalloc_int(sz, 1, 0);
-}
-
-uint32_t kmalloc_p(uint32_t sz, uint32_t *phys)
-{
-    return kmalloc_int(sz, 0, phys);
-}
-
-uint32_t kmalloc_ap(uint32_t sz, uint32_t *phys)
-{
-    return kmalloc_int(sz, 1, phys);
-}
-
-uint32_t kmalloc(uint32_t sz)
-{
-    return kmalloc_int(sz, 0, 0);
-}
 
 static void set_frame(uint32_t frame_addr)
 {
@@ -167,7 +132,7 @@ void free_frame(page_t *page)
    }
 }
 
-void paging_initialize(uint32_t  mem_upper)
+void paging_initialize(uint32_t mem_upper, uint32_t mem_lower)
 {
    nframes = mem_upper / 4;
    frames = (uint32_t*)kmalloc(INDEX_FROM_BIT(nframes));
@@ -178,15 +143,25 @@ void paging_initialize(uint32_t  mem_upper)
    current_directory = kernel_directory;
 
    int i = 0;
-   while (i < placement_pointer)
+    for (i = KHEAP_START; i < KHEAP_START+KHEAP_INITIAL_SIZE; i += 0x1000)
+        get_page(i, 1, kernel_directory);
+
+   i = 0;
+   while (i < placement_address + 0x3000)
    {
        alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
        i += 0x1000;
    }
 
+   for (i = KHEAP_START; i < KHEAP_START+KHEAP_INITIAL_SIZE; i += 0x1000)
+        alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
+
    isr_install_handler(14, page_fault);
    switch_page_directory(kernel_directory);
    log_print(NOTICE, "Paging");
+
+   kheap = create_heap(KHEAP_START, KHEAP_START+KHEAP_INITIAL_SIZE, 0xCFFFF000, 0, 0);
+   log_print(NOTICE, "Heap");
 }
 
 void switch_page_directory(page_directory_t *dir)
@@ -224,8 +199,19 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir)
 void page_fault(void)
 {
   uint32_t faulting_address;
-  asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
+  asm volatile("mov %%cr2, %0" : "=r"(faulting_address));
+
+  /*int present = !(int_ctx->err_code & 0x1);
+  int rw = int_ctx->err_code & 0x2;
+  int user = int_ctx->err_code & 0x4;
+  int reserved = int_ctx->err_code & 0x8;
+  int id = int_ctx->err_code & 0x10;*/
+
   log_print(ERROR, "Page fault! at: 0x%x", faulting_address);
-  asm("hlt");
+  /*printf("------------");
+  printf("present:%i\n", present);
+  printf("user:%i\n", user);
+  printf("reserved:%i\n", reserved);
+  printf("id:%i\n", id);
+  printf("------------");*/
 }
-//heap_end = (placement_pointer + 0x1000) & ~0xFFF;

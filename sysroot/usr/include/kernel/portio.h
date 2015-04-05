@@ -1,6 +1,8 @@
 #ifndef _KERNEL_IOPORT_H
 #define _KERNEL_IOPORT_H
 
+#define NULL ((void *)0UL)
+
 #if !(defined(__i386__) || defined(__x86_64__))
 #error "This hardware platform doesn't have IO ports"
 #endif

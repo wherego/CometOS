@@ -16,6 +16,8 @@
 #include "../arch/i386/draw.h"
 #include "../arch/i386/vfs.h"
 #include "../arch/i386/log.h"
+#include "../arch/i386/array.h"
+#include "../arch/i386/heap.h"
 #include <kernel/portio.h>
 #endif
 
@@ -32,7 +34,8 @@ void kernel_main(struct multiboot *mboot_ptr)
 	pic_initialize();
 	keyboard_install();
 	pit_install();
-	paging_initialize(mboot_ptr->mem_upper);
+	uint32_t a = kmalloc(8);
+	paging_initialize(mboot_ptr->mem_upper, mboot_ptr->mem_lower);
 	sti(); //turn on interupts
 	log_print(INFO, "Interupts On\n");
 #endif
@@ -43,20 +46,22 @@ void kernel_main(struct multiboot *mboot_ptr)
 	//#endif
 
 	printf("CometOS ver 0.0.0  -  time:%i:%i:%i\n",time_get(2), time_get(1), time_get(0));
-	printf("Hello, kernel World!\n\n");
+	printf("Hello, kernel World!\n");
 
 	//uint32_t *ptr = (uint32_t*)0xA0000000;
 	//uint32_t do_page_fault = *ptr;
 	//printf(do_page_fault);
-
-	uint32_t a = kmalloc(8);
-	printf("a: %x", a);
-
+	
 	uint32_t b = kmalloc(8);
-	printf("b: %x", b);
-
 	uint32_t c = kmalloc(8);
-	printf("c: %x", c);
+	printf("A: 0x%x", a);
+	printf(" - B: 0x%x", b);
+	printf(" - C: 0x%x", c);
+
+	kfree(c);
+	kfree(b);
+	uint32_t d = kmalloc(8);
+	printf(" - D: 0x%x", d);
 
     for (;;); //main loop
 }
