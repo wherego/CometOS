@@ -13,6 +13,7 @@ Currently supported elements:
 - keybord input
 - IRQ's
 - Paging
+- Heap
 - Timer
 - Time and date
 - VFS
