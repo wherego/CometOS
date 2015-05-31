@@ -57,13 +57,13 @@ static inline uint32_t inport32(uint16_t port)
 __attribute__((unused))
 static inline void cli()
 {
-	__asm__ __volatile__ ("cli");
+	__asm__ __volatile__ ("cli"); //Off
 }
 
 __attribute__((unused))
 static inline void sti()
 {
-	__asm__ __volatile__ ("sti");
+	__asm__ __volatile__ ("sti"); //On
 }
 
 #endif

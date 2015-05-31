@@ -1,5 +1,6 @@
 #include <kernel/portio.h>
 #include "../arch/i386/log.h"
+#include "../arch/i386/task.h"
 
 long timer_ticks = 0;
 unsigned long ticker = 0;

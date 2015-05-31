@@ -6,212 +6,216 @@
 #include "../arch/i386/heap.h"
 #include <kernel/portio.h>
 
-#define INDEX_FROM_BIT(b) (b / 0x20)
-#define OFFSET_FROM_BIT(b) (b % 0x20)
+#define PAGESIZE_DEC 4096
+#define PAGESIZE_HEX 0x1000
+#define TABESIZE_DEC 1024
+#define TABLESIZE_HEX 0x400
+#define ADDRSIZE_HEX 0x20
+#define ADDRSIZE_DEC 32
+#define FREE 0
+#define USED 0x1
 
-extern uint32_t placement_address;
-extern heap_t *kheap;
+extern void *end_kernel;
+uintptr_t kernel_pointer = (uintptr_t)&end_kernel;
 
-uint32_t *frames;
-uint32_t nframes;
+uint32_t frame_number;
+uint32_t *frame_bitmap;
 
-page_directory_t *kernel_directory=0;
-page_directory_t *current_directory=0;
+extern void loadPageDirectory(unsigned int*);
+extern void enablePaging();
 
-static void set_frame(uint32_t frame_addr)
+uint32_t page_directory[TABESIZE_DEC] __attribute__((aligned(PAGESIZE_DEC)));
+uint32_t first_page_table[TABESIZE_DEC] __attribute__((aligned(PAGESIZE_DEC)));
+
+void page_fault(struct interrupt_context* int_ctx)
 {
-   uint32_t frame = frame_addr/0x1000;
-   uint32_t idx = INDEX_FROM_BIT(frame);
-   uint32_t off = OFFSET_FROM_BIT(frame);
-   frames[idx] |= (0x1 << off);
+  uint32_t addr;
+  asm volatile("mov %%cr2, %0" : "=r" (addr));
+
+  /*int present = !(int_ctx->err_code & 0x1); // Page not present
+  int rw = int_ctx.err_code & 0x2; // Write operation?
+  int us = int_ctx.err_code & 0x4; // Processor was in user-mode?
+  int reserved = int_ctx.err_code & 0x8; // Overwritten CPU-reserved bits of page entry?
+  int id = int_ctx.err_code & 0x10; // Caused by an instruction fetch?*/
+
+  int present = ((int)int_ctx & 0x1);
+  int rw = ((int)int_ctx & 0x2);
+  int us = ((int)int_ctx & 0x4);
+  int reserved = ((int)int_ctx & 0x8);
+  int id = ((int)int_ctx & 0x10);
+
+  printf("\n-- Pagefult --\n\n");
+  printf("Addr: 0x%x\n", addr);
+  printf("Present: %i\n", present);
+  printf("rw: %i\n", rw);
+  printf("us: %i\n", us);
+  printf("reserved: %i\n", reserved);
+  printf("id: %i\n\n", id);
+
+  log_print(CRIT, "Kernel hlt");
+  asm("hlt");
 }
 
-static void clear_frame(uint32_t frame_addr)
+void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
 {
-   uint32_t frame = frame_addr/0x1000;
-   uint32_t idx = INDEX_FROM_BIT(frame);
-   uint32_t off = OFFSET_FROM_BIT(frame);
-   frames[idx] &= ~(0x1 << off);
-}
+  frame_number = mem_upper / 4;
+  frame_bitmap = ponter_move_int((frame_number / ADDRSIZE_HEX), 0);
 
-static uint32_t test_frame(uint32_t frame_addr)
-{
-   uint32_t frame = frame_addr/0x1000;
-   uint32_t idx = INDEX_FROM_BIT(frame);
-   uint32_t off = OFFSET_FROM_BIT(frame);
-   return (frames[idx] & (0x1 << off));
-}
-
-void dma_frame(page_t *page, int is_kernel, int is_writeable, uintptr_t address)
-{
-  /* Page this address directly */
-  page->present = 1;
-  page->rw = (is_writeable) ? 1 : 0;
-  page->user = (is_kernel) ? 0 : 1;
-  page->frame = address / 0x1000;
-}
-
-static uint32_t first_frame()
-{
-   uint32_t i, j;
-   for (i = 0; i < INDEX_FROM_BIT(nframes); i++)
-   {
-       if (frames[i] != 0xFFFFFFFF) // nothing free, exit early.
-       {
-           // at least one bit is free here.
-           for (j = 0; j < 32; j++)
-           {
-               uint32_t toTest = 0x1 << j;
-               if ( !(frames[i]&toTest) )
-               {
-                   return i*4*8+j;
-               }
-           }
-       }
-   }
-}
-
-uintptr_t memory_use()
-{
-  uintptr_t ret = 0;
-  uint32_t i, j;
-
-  for (i = 0; i < INDEX_FROM_BIT(nframes); ++i)
+  int i;
+  for(i = 0; i < TABESIZE_DEC; i++)
   {
-    for (j = 0; j < 32; ++j)
-    {
-      uint32_t testFrame = 0x1 << j;
+    page_directory[i] = 0x00000002;
+    first_page_table[i] = (i * PAGESIZE_HEX) | 3; 
+  }
 
-      if (frames[i] & testFrame)
+  page_directory[0] = ((unsigned int)first_page_table) | 3;
+
+  loadPageDirectory(page_directory);
+  enablePaging();
+
+  isr_install_handler(14, page_fault);
+
+  while(i < kernel_pointer)
+  {
+    page_map(frame_alloc(), i*PAGESIZE_HEX, 0);
+    i += PAGESIZE_HEX;
+  }
+}
+
+void frame_set(void * addr)
+{
+   uint32_t index = (uint32_t)addr / PAGESIZE_HEX;
+   frame_bitmap[index / ADDRSIZE_HEX] |= (USED << (index % ADDRSIZE_HEX));
+}
+
+void frame_free(void * addr)
+{
+   uint32_t index = (uint32_t)addr / PAGESIZE_HEX;
+   frame_bitmap[index / ADDRSIZE_HEX] &= ~(USED << (index % ADDRSIZE_HEX));
+}
+
+uint32_t frame_test(void * addr)
+{
+   uint32_t index = (uint32_t)addr / PAGESIZE_HEX;
+   return frame_bitmap[index] & (USED << (index % ADDRSIZE_HEX));
+}
+
+void * frame_find()
+{
+  int i, x;
+  for (i = 0; i < (frame_number / ADDRSIZE_DEC); i++) 
+  {
+    if (frame_bitmap[i] != 0xFFFFFFFF)
+    {
+      for (x = 0; x < ADDRSIZE_DEC; x++)
       {
-        ret++;
+        if (frame_bitmap[i] & (USED << x))
+        {
+          return i * ADDRSIZE_DEC + x;
+        }
       }
     }
   }
 
-  return ret * 4;
+    return -1;
 }
 
-uintptr_t memory_total()
+void * ponter_move_int(uint32_t size, uint32_t * physaddr)
 {
-  return nframes * 4;
+  if(physaddr)
+  {
+    *physaddr = kernel_pointer;
+  }
+
+  uint32_t i = kernel_pointer;
+  kernel_pointer += size;
+
+  return (void *)i;
 }
 
-void alloc_frame(page_t *page, int is_kernel, int is_writeable)
+void * frame_alloc()
 {
-   if (page->frame != 0)
-   {
-       return;
-   }
-   else
-   {
-       uint32_t idx = first_frame();
-       if (idx == (uint32_t)-1)
-       {
-           log_print(ERROR, "No free frames!");
-       }
-       set_frame(idx*0x1000);
-       page->present = 1;
-       page->rw = (is_writeable)?1:0;
-       page->user = (is_kernel)?0:1;
-       page->frame = idx;
-   }
+  uint32_t index = frame_find();
+  if(index == -1)
+  {
+    log_print(ERROR, "Paging: No free frames.");
+    return NULL;
+  }
+
+  frame_set(index * PAGESIZE_HEX);
+  return ((void *)(index * PAGESIZE_HEX));
 }
 
-void free_frame(page_t *page)
+void * directory_get(void)
 {
-   uint32_t frame;
-   if (!(frame=page->frame))
-   {
-       return;
-   }
-   else
-   {
-       clear_frame(frame);
-       page->frame = 0x0;
-   }
+  uint32_t cr3;
+  asm volatile("mov %%cr3, %0": "=r"(cr3));
+
+  return (void *)cr3;
 }
 
-void paging_initialize(uint32_t mem_upper, uint32_t mem_lower)
+uint32_t page_map(void * physaddr, void * virtualaddr, unsigned int flags)
 {
-   nframes = mem_upper / 4;
-   frames = (uint32_t*)kmalloc(INDEX_FROM_BIT(nframes));
-   memset(frames, 0, INDEX_FROM_BIT(nframes));
+    // Check if not aligned
+  if (((unsigned int)virtualaddr & 0xFFF) || ((unsigned int)physaddr & 0xFFF))
+  {
+    printf("not aligned");
+    return NULL;
+  }
 
-   kernel_directory = (page_directory_t*)kmalloc_a(sizeof(page_directory_t));
-   memset(kernel_directory, 0, sizeof(page_directory_t));
-   current_directory = kernel_directory;
+  unsigned long page_index = (unsigned long)virtualaddr / PAGESIZE_HEX;
+  unsigned long pdindex = (unsigned long)page_index / TABLESIZE_HEX;
+  unsigned long ptindex = (unsigned long)page_index % TABLESIZE_HEX;
 
-   int i = 0;
-    for (i = KHEAP_START; i < KHEAP_START+KHEAP_INITIAL_SIZE; i += 0x1000)
-        get_page(i, 1, kernel_directory);
+  unsigned long * pd = (unsigned long *)directory_get(); 
+  // Seek out or create Pagetable
+  if ((((unsigned int)pd[pdindex]) & USED) != USED)
+  {
+    //create table
+    uint32_t * page_table = (uint32_t)frame_alloc();
 
-   i = 0;
-   while (i < placement_address + 0x3000)
-   {
-       alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
-       i += 0x1000;
-   }
+    int i;
+    for(i = 0; i < TABESIZE_DEC; i++)
+    {
+     page_table[i] = (i * PAGESIZE_HEX) | 3;
+    }
 
-   for (i = KHEAP_START; i < KHEAP_START+KHEAP_INITIAL_SIZE; i += 0x1000)
-        alloc_frame( get_page(i, 1, kernel_directory), 0, 0);
+    pd[pdindex] = ((unsigned long)page_table) | 3 ;
+  }
 
-   isr_install_handler(14, page_fault);
-   switch_page_directory(kernel_directory);
-   log_print(NOTICE, "Paging");
+  unsigned long * pt = ((unsigned long *)pd) + (TABLESIZE_HEX * pdindex);
+  if ((unsigned int)pt[ptindex] & USED)
+  {
+    return NULL;
+  }
 
-   kheap = create_heap(KHEAP_START, KHEAP_START+KHEAP_INITIAL_SIZE, 0xCFFFF000, 0, 0);
-   log_print(NOTICE, "Heap");
+  pt[ptindex] = ((unsigned long)physaddr) | (flags & 0xFFF) | USED;
+  flush_tlb(virtualaddr);
+
+  return (void *)pt[ptindex];
 }
 
-void switch_page_directory(page_directory_t *dir)
+void * page_physaddr(void * virtualaddr)
 {
-   current_directory = dir;
-   asm volatile("mov %0, %%cr3":: "r"(&dir->tablesPhysical));
-   uint32_t cr0;
-   asm volatile("mov %%cr0, %0": "=r"(cr0));
-   cr0 |= 0x80000000; // Enable paging
-   asm volatile("mov %0, %%cr0":: "r"(cr0));
-}
+  unsigned long page_index = (unsigned long)virtualaddr / PAGESIZE_HEX;
+  unsigned long pdindex = (unsigned long)page_index / TABLESIZE_HEX;
+  unsigned long ptindex = (unsigned long)page_index % TABLESIZE_HEX;
+ 
+  unsigned long * pd = (unsigned long *)directory_get();
 
-page_t *get_page(uint32_t address, int make, page_directory_t *dir)
-{
-   address /= 0x1000;
-   uint32_t table_idx = address / 1024;
-   if (dir->tables[table_idx])
-   {
-       return &dir->tables[table_idx]->pages[address%1024];
-   }
-   else if(make)
-   {
-       uint32_t tmp;
-       dir->tables[table_idx] = (page_table_t*)kmalloc_ap(sizeof(page_table_t), &tmp);
-       memset(dir->tables[table_idx], 0, 0x1000);
-       dir->tablesPhysical[table_idx] = tmp | 0x7;
-       return &dir->tables[table_idx]->pages[address%1024];
-   }
-   else
-   {
-       return 0;
-   }
-} 
+  //Check whether the PD entry is present.
+  if((((unsigned int)pd[pdindex]) & USED) != USED)
+  {
+    return NULL;
+  }
+ 
+  unsigned long * pt = ((unsigned long *)0xFFC00000) + (TABLESIZE_HEX * pdindex);
 
-void page_fault(void)
-{
-  uint32_t faulting_address;
-  asm volatile("mov %%cr2, %0" : "=r"(faulting_address));
-
-  /*int present = !(int_ctx->err_code & 0x1);
-  int rw = int_ctx->err_code & 0x2;
-  int user = int_ctx->err_code & 0x4;
-  int reserved = int_ctx->err_code & 0x8;
-  int id = int_ctx->err_code & 0x10;*/
-
-  log_print(ERROR, "Page fault! at: 0x%x", faulting_address);
-  /*printf("------------");
-  printf("present:%i\n", present);
-  printf("user:%i\n", user);
-  printf("reserved:%i\n", reserved);
-  printf("id:%i\n", id);
-  printf("------------");*/
+  //Check whether the PT entry is present.
+  if((((unsigned int)pt[ptindex]) & USED) != USED)
+  {
+    return NULL;
+  }
+ 
+  return (void *)((pt[ptindex] & ~0xFFF) + ((unsigned long)virtualaddr & 0xFFF));
 }

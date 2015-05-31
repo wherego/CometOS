@@ -29,6 +29,7 @@ SECTIONS
 	.data BLOCK(4K) : ALIGN(4K)
 	{
 		*(.data)
+		end_data = .;
 	}
 
 	/* Read-write data (uninitialized) and stack */
@@ -37,9 +38,8 @@ SECTIONS
 		*(COMMON)
 		*(.bss)
 		*(.bootstrap_stack)
+		end_kernel = .;
 	}
-
-	end = .;
 
 	/* The compiler may produce other sections, put them in the proper place in
 	   in this file, if you'd like to include them in the final kernel. */

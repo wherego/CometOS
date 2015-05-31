@@ -1,45 +1,66 @@
 #ifndef _COMETOS_ARCH_I386_PAGING_H
 #define _COMETOS_ARCH_I386_PAGING_H
 
-typedef struct page
+enum page_flags
 {
-   uint32_t present    : 1;   // Page present in memory
-   uint32_t rw         : 1;   // Read-only if clear, readwrite if set
-   uint32_t user       : 1;   // Supervisor level only if clear
-   uint32_t accessed   : 1;   // Has the page been accessed since last refresh?
-   uint32_t dirty      : 1;   // Has the page been written to since last refresh?
-   uint32_t unused     : 7;   // Amalgamation of unused and reserved bits
-   uint32_t frame      : 20;  // Frame address (shifted right 12 bits)
-} page_t;
+	PAGE_PRESENT = 1,
+	PAGE_WRITABLE= 2,
+	PAGE_USER = 4,
+	PAGE_WRITETHOUGH = 8,
+	PAGE_NOT_CACHEABLE = 0x10,
+	PAGE_ACCESSED =	0x20,
+	PAGE_DIRTY = 0x40,
+	PAGE_PAT = 0x80,
+	PAGE_CPU_GLOBAL = 0x100,
+	PAGE_LV4_GLOBAL = 0x200,
+   	PAGE_FRAME = 0x7FFFF000
+};
 
-typedef struct page_table
+enum table_flags
 {
-   page_t pages[1024];
-} page_table_t;
+	TABLE_PRESENT =	1,
+	TABLE_WRITABLE = 2,
+	TABLE_USER = 4,
+	TABLE_PWT = 8,
+	TABLE_PCD = 0x10,
+	TABLE_ACCESSED = 0x20,
+	TABLE_DIRTY = 0x40,
+	TABLE_4MB = 0x80,
+	TABLE_CPU_GLOBAL = 0x100,
+	TABLE_LV4_GLOBAL = 0x200,
+   	TABLE_FRAME = 0x7FFFF000
+};
 
-typedef struct page_directory
+__attribute__((unused))
+static inline void flag_add (uint32_t * addr, uint32_t flag)
 {
-   page_table_t *tables[1024];
+	*addr |= flag;
+}
 
-   uint32_t tablesPhysical[1024];
-   uint32_t physicalAddr;
-} page_directory_t;
+__attribute__((unused))
+static inline void flag_remove (uint32_t * addr, uint32_t flag)
+{
+	*addr &= ~flag;
+}
 
-void paging_initialize(uint32_t mem_upper, uint32_t mem_lower);
-void switch_page_directory(page_directory_t *new);
-page_t *get_page(uint32_t address, int make, page_directory_t *dir);
+__attribute__((unused))
+static inline void flush_tlb(unsigned long addr)
+{
+   asm volatile("invlpg (%0)" ::"r" (addr) : "memory");
+}
 
-uint32_t kmalloc_int(uint32_t sz, int align, uint32_t *phys);
-uint32_t kmalloc_a(uint32_t sz);
-uint32_t kmalloc_p(uint32_t sz, uint32_t *phys);
-uint32_t kmalloc_ap(uint32_t sz, uint32_t *phys);
-uint32_t kmalloc(uint32_t sz);
+uint32_t page_map(void * physaddr, void * virtualaddr, unsigned int flags);
+uint32_t frame_test(void * addr);
 
-void dma_frame(page_t * page, int, int, uintptr_t);
+void paging_initialize(uint32_t mem_lower, uint32_t mem_upper);
+//void page_fault(struct interrupt_context* int_ctx);
+void frame_set(void * addr);
+void frame_free(void * addr);
 
-uintptr_t memory_use();
-uintptr_t memory_total();
-
-void page_fault(void);
+void * frame_find();
+void * frame_alloc();
+void * ponter_move_int(uint32_t size, uint32_t * physaddr);
+void * page_physaddr(void * virtualaddr);
+void * directory_get(void);
 
 #endif

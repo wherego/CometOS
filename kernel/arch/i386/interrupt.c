@@ -96,14 +96,14 @@ void isr_handler(struct interrupt_context* int_ctx)
 	handler = isr_routines[int_ctx->int_no];
 	if (handler)
 		{
-			handler(int_ctx);
+			handler(int_ctx->err_code);
 		}
 
     else if (int_ctx->int_no < 32)
     {
-    	log_print(CRIT, exception_messages[int_ctx->int_no]);
-    	log_print(CRIT, "\nFult number:%i\n\n", int_ctx->int_no);
-        log_print(CRIT, "System Halted!\n");
+    	printf(exception_messages[int_ctx->int_no]);
+    	printf("\nFult number:%i\n\n", int_ctx->int_no);
+        printf("System Halted!\n");
     }
 
 	(void) int_ctx;

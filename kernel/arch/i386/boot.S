@@ -67,6 +67,7 @@ _start:
 	call _init
 
 	# Transfer control to the main kernel.
+	push %esp #Push initial stack pointer
 	push %ebx #Push multiboot info.
 	call kernel_main
 
