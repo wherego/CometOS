@@ -55,6 +55,12 @@ static inline uint32_t inport32(uint16_t port)
 }
 
 __attribute__((unused))
+static inline void io_wait(void)
+{
+	asm volatile("outb %%al, $0x80" : :"a"(0) );
+}
+
+__attribute__((unused))
 static inline void cli()
 {
 	__asm__ __volatile__ ("cli"); //Off

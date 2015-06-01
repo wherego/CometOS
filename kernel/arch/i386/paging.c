@@ -80,6 +80,7 @@ void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
     page_map(frame_alloc(), i*PAGESIZE_HEX, 0);
     i += PAGESIZE_HEX;
   }
+  log_print(NOTICE, "Paging");
 }
 
 void frame_set(void * addr)
