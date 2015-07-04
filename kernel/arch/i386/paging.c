@@ -61,10 +61,20 @@ void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
   frame_number = mem_upper / 4;
   frame_bitmap = ponter_move_int((frame_number / ADDRSIZE_HEX), 0);
 
+
+  //uint32_t * page_directory = directory_create(0x00000002);
+
+  //uint32_t * first_page_table  = table_create(3);
+  //table_map((void*)page_directory, 0, first_page_table, 3);
+
   int i;
   for(i = 0; i < TABESIZE_DEC; i++)
   {
     page_directory[i] = 0x00000002;
+  }
+
+  for(i = 0; i < TABESIZE_DEC; i++)
+  {
     first_page_table[i] = (i * PAGESIZE_HEX) | 3; 
   }
 
@@ -80,6 +90,7 @@ void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
     page_map(frame_alloc(), i*PAGESIZE_HEX, 0);
     i += PAGESIZE_HEX;
   }
+  
   log_print(NOTICE, "Paging");
 }
 
@@ -147,14 +158,6 @@ void * frame_alloc()
   return ((void *)(index * PAGESIZE_HEX));
 }
 
-void * directory_get(void)
-{
-  uint32_t cr3;
-  asm volatile("mov %%cr3, %0": "=r"(cr3));
-
-  return (void *)cr3;
-}
-
 uint32_t page_map(void * physaddr, void * virtualaddr, unsigned int flags)
 {
     // Check if not aligned
@@ -196,6 +199,38 @@ uint32_t page_map(void * physaddr, void * virtualaddr, unsigned int flags)
   return (void *)pt[ptindex];
 }
 
+uint32_t page_unmap(void * physaddr, void * virtualaddr)
+{
+    // Check if not aligned
+  if (((unsigned int)virtualaddr & 0xFFF) || ((unsigned int)physaddr & 0xFFF))
+  {
+    printf("not aligned");
+    return NULL;
+  }
+
+  unsigned long page_index = (unsigned long)virtualaddr / PAGESIZE_HEX;
+  unsigned long pdindex = (unsigned long)page_index / TABLESIZE_HEX;
+  unsigned long ptindex = (unsigned long)page_index % TABLESIZE_HEX;
+
+  unsigned long * pd = (unsigned long *)directory_get(); 
+  // Seek out or create Pagetable
+  if ((((unsigned int)pd[pdindex]) & USED) != USED)
+  {
+    return NULL;
+  }
+
+  unsigned long * pt = ((unsigned long *)pd) + (TABLESIZE_HEX * pdindex);
+  if ((unsigned int)pt[ptindex] & FREE)
+  {
+    return NULL;
+  }
+
+  pt[ptindex] &= ~0x0;
+  flush_tlb(virtualaddr);
+
+  return 1;
+}
+
 void * page_physaddr(void * virtualaddr)
 {
   unsigned long page_index = (unsigned long)virtualaddr / PAGESIZE_HEX;
@@ -219,4 +254,76 @@ void * page_physaddr(void * virtualaddr)
   }
  
   return (void *)((pt[ptindex] & ~0xFFF) + ((unsigned long)virtualaddr & 0xFFF));
+}
+
+void * table_create(unsigned int flags)
+{
+  uint32_t * page_table = (uint32_t)frame_alloc();
+
+  if(page_table == NULL)
+  {
+    return NULL;
+  }
+  
+  int i;
+  for(i = page_table; i < TABESIZE_DEC; i++)
+    {
+      page_table[i] = (i * PAGESIZE_HEX) | flags;
+    }
+
+  return page_table;
+}
+
+void * table_delete(void * table_addr)
+{
+  frame_free(table_addr);
+}
+
+void * table_map(void * directory, unsigned long pdindex, void * table_addr, unsigned int flags)
+{
+  unsigned long * pd = (unsigned long *)directory;
+  pd[pdindex] = ((unsigned long)table_addr) | flags;
+}
+
+void table_unmap(void * directory, unsigned long pdindex)
+{
+  unsigned long * pd = (unsigned long *)directory;
+  pd[pdindex] = 0x00000000;
+}
+
+void * directory_get(void)
+{
+  uint32_t cr3;
+  asm volatile("mov %%cr3, %0": "=r"(cr3));
+
+  return (void *)cr3;
+}
+
+void * directory_create(unsigned int flags)
+{
+  uint32_t * directory = (uint32_t)frame_alloc();
+
+  if(directory == NULL)
+  {
+    return NULL;
+  }
+
+  int i;
+  for(i = directory; i < TABESIZE_DEC; i++)
+  {
+    directory[i] = flags;
+  }
+
+  return directory;
+}
+
+void directory_delete(void * directory_addr)
+{
+  uint32_t dir = directory_get();
+  if(dir == directory_addr)
+  {
+    return NULL;
+  }
+
+  frame_free(directory_addr);
 }

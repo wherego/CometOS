@@ -49,18 +49,32 @@ static inline void flush_tlb(unsigned long addr)
    asm volatile("invlpg (%0)" ::"r" (addr) : "memory");
 }
 
-uint32_t page_map(void * physaddr, void * virtualaddr, unsigned int flags);
-uint32_t frame_test(void * addr);
-
 void paging_initialize(uint32_t mem_lower, uint32_t mem_upper);
 //void page_fault(struct interrupt_context* int_ctx);
+
+//page
+uint32_t page_map(void * physaddr, void * virtualaddr, unsigned int flags);
+uint32_t page_unmap(void * physaddr, void * virtualaddr);
+void * page_physaddr(void * virtualaddr);
+
+//frame
+uint32_t frame_test(void * addr);
 void frame_set(void * addr);
 void frame_free(void * addr);
-
 void * frame_find();
 void * frame_alloc();
+
 void * ponter_move_int(uint32_t size, uint32_t * physaddr);
-void * page_physaddr(void * virtualaddr);
+
+//directory
 void * directory_get(void);
+void * directory_create(unsigned int flags);
+void directory_delete(void * directory_addr);
+
+//table
+void * table_create(unsigned int flags);
+void * table_delete(void * table_addr);
+void * table_map(void * directory, unsigned long pdindex, void * table_addr, unsigned int flags);
+void table_unmap(void * directory, unsigned long pdindex);
 
 #endif
