@@ -38,8 +38,8 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	pit_install();
 	paging_initialize(mboot_ptr->mem_lower, mboot_ptr->mem_upper);
 	sti(); //turn on interupts
-	floppy_initialize(38);
-	floppy_set_dma(0x8000);
+	//floppy_initialize(38);
+	//floppy_set_dma(0x8000);
 	log_print(INFO, "Interupts On\n");
 #endif
 
@@ -54,10 +54,6 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	/*uint32_t *ptr = (uint32_t*)0xA0000000;
 	uint32_t do_page_fault = *ptr;
 	printf(do_page_fault);*/
-
-	asm("movb $0x13, %ah");
-	asm("int 0x10");
-	asm("ret");
 
     for (;;); //main loop
 }

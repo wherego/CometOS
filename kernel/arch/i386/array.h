@@ -1,0 +1,6 @@
+#ifndef _COMETOS_ARCH_I386_ARRAY_H
+#define _COMETOS_ARCH_I386_ARRAY_H
+
+
+
+#endif

@@ -18,4 +18,4 @@ while test $# -gt 0; do
     esac
 done
 
-qemu-system-$(./target-triplet-to-arch.sh $HOST) $QEMU_DEBUG -cdrom cometos.iso
+qemu-system-$(./target-triplet-to-arch.sh $HOST) $QEMU_DEBUG -cdrom cometos.iso -m 512M

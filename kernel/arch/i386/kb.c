@@ -30,7 +30,7 @@ void keyboard_handler(struct interrupt_context* int_ctx)
     if (kb_count_raw < KB_MAXBUFFER)
     {
       kb_buffer_raw[kb_count_raw++] = scancode;
-     }
+    }
     else
     {
       kb_count_raw = 0;
@@ -113,6 +113,5 @@ void keyboard_handler(struct interrupt_context* int_ctx)
 void keyboard_install()
 {
     irq_install_handler(1, keyboard_handler);
-
     log_print(NOTICE, "Keyboard");
 }
