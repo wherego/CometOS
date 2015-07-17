@@ -19,6 +19,7 @@ int frame_test(void * addr);
 void * table_create(unsigned int flags);
 void table_unmap(void * directory, unsigned long pdindex);
 void table_remove(void * table_addr);
+void * table_copy(void * table, void * copy);
 
 void * directory_create(uint32_t flags);
 void directory_remove(void * directory_addr);

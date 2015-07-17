@@ -182,6 +182,20 @@ void table_remove(void * table_addr)
   frame_free(table_addr);
 }
 
+void * table_copy(void * table, void * copy)
+{
+  uint32_t * start = (uint32_t)table;
+  uint32_t * end = (uint32_t)copy;
+
+  int i;
+  for(i = 0; i < ENTRY_SIZE_DEC; i++)
+    {
+      end[i] = start[i];
+    }
+
+    return (void *)copy;
+}
+
 void * directory_get(void)
 {
   uint32_t cr3;
