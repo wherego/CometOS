@@ -130,7 +130,7 @@ void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
 
   //Create and load kernel's paging directory
   uint32_t * kernel_directory = directory_create(0x00000002);
-  loadPageDirectory(kernel_directory);
+  directory_load(kernel_directory);
 
   //Map virtual addr's for kernel
   i = 0;
@@ -143,7 +143,7 @@ void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
   isr_install_handler(14, page_fault);
 
   //Enable paging
-  enablePaging();
+  paging_enable();
   log_print(NOTICE, "Paging");
 }
 
@@ -303,4 +303,17 @@ void * page_physaddr(void * virtualaddr)
   }
  
   return (void *)((pt[ptindex] & ~0xFFF) + ((unsigned long)virtualaddr & 0xFFF));
+}
+
+void directory_load(void * addr)
+{
+  __asm__ __volatile__ ("mov %0, %%cr3":: "r"((uint32_t)addr));
+}
+
+void paging_enable(void)
+{
+  uint32_t cr0;
+  __asm__ __volatile__ ("mov %%cr0, %0": "=r"(cr0));
+  cr0 |= 0x80000000;
+  __asm__ __volatile__ ("mov %0, %%cr0":: "r"(cr0));
 }

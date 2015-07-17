@@ -22,6 +22,7 @@ void table_remove(void * table_addr);
 
 void * directory_create(uint32_t flags);
 void directory_remove(void * directory_addr);
+void directory_load(void * addr);
 
 void paging_initialize(uint32_t mem_lower, uint32_t mem_upper);
 void * page_map(void * physaddr, void * virtualaddr, unsigned int flags);
