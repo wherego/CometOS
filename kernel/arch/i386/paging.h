@@ -5,7 +5,7 @@ struct bitmap
 {
 	uintptr_t *entries;
 	uint32_t number;
-};
+}__attribute__((packed));
 
 __attribute__((unused))
 static inline void flush_tlb(unsigned long addr)
@@ -24,10 +24,12 @@ void * table_copy(void * table, void * copy);
 void * directory_create(uint32_t flags);
 void directory_remove(void * directory_addr);
 void directory_load(void * addr);
+void * directory_copy(void * directory, void * copy);
 
 void paging_initialize(uint32_t mem_lower, uint32_t mem_upper);
 void * page_map(void * physaddr, void * virtualaddr, unsigned int flags);
 int page_unmap(void * virtualaddr);
 void * page_physaddr(void * virtualaddr);
+uint32_t page_getsize(void);
 
 #endif

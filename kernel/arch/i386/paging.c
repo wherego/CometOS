@@ -233,6 +233,24 @@ void directory_remove(void * directory_addr)
   frame_free(directory_addr);
 }
 
+void * directory_copy(void * directory, void * copy)
+{
+  uint32_t * start = (uint32_t)directory;
+  uint32_t * end = (uint32_t)copy;
+
+  int i;
+  for(i = 0; i < ENTRY_SIZE_DEC; i++)
+    {
+      if((unsigned int)start[i] & USED)
+      {
+        //TODO: add maping
+        table_copy((start[i] & ~0xFFF), frame_alloc());
+      }
+    }
+
+    return (void *)copy;
+}
+
 void * page_map(void * physaddr, void * virtualaddr, unsigned int flags)
 {
   if (((unsigned int)virtualaddr & 0xFFF) || ((unsigned int)physaddr & 0xFFF))
@@ -330,4 +348,9 @@ void paging_enable(void)
   __asm__ __volatile__ ("mov %%cr0, %0": "=r"(cr0));
   cr0 |= 0x80000000;
   __asm__ __volatile__ ("mov %0, %%cr0":: "r"(cr0));
+}
+
+uint32_t page_getsize(void)
+{
+  return PAGE_SIZE_HEX;
 }

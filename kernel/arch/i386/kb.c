@@ -18,6 +18,10 @@ unsigned short kb_ltmp;
 volatile int kb_shift_flag=0;
 volatile int kb_caps_flag=0;
 
+char* get_buffer;
+int get_count;
+int get = 0;
+
 /* Handles the keyboard interrupt */
 void keyboard_handler(struct interrupt_context* int_ctx)
 {
