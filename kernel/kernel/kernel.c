@@ -37,10 +37,10 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	pic_initialize();
 	keyboard_install();
 	pit_install();
-	//paging_initialize(mboot_ptr->mem_lower, mboot_ptr->mem_upper);
+	paging_initialize(mboot_ptr->mem_lower, mboot_ptr->mem_upper);
 	sti(); //turn on interupts
-	//floppy_initialize(38);
-	//floppy_set_dma(0x8000);
+	floppy_initialize(38);
+	floppy_set_dma(0x8000);
 	log_print(INFO, "Interupts On\n");
 #endif
 
@@ -50,7 +50,7 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	//#endif
 
 	printf("CometOS ver 0.0.0  -  time:%i:%i:%i\n",time_get(2), time_get(1), time_get(0));
-	printf("Hello, kernel World!\n");
+	printf("Hello, kernel World!");
 
 #if DEBUG
 
