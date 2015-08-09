@@ -7,6 +7,12 @@ typedef struct
 	uint32_t size;
 }__attribute__((packed)) bitmap_t;
 
+typedef struct
+{
+	uintptr_t *entries;
+	uint32_t size;
+}__attribute__((packed)) array_t;
+
 bitmap_t bitmap_create(uint32_t size);
 int bitmap_delete(bitmap_t bitmap);
 void bitmap_map(uint32_t start, uint32_t end, int value, bitmap_t bitmap);

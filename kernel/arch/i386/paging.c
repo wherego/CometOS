@@ -4,6 +4,7 @@
 #include "../arch/i386/log.h"
 #include "../arch/i386/paging.h"
 #include "../arch/i386/heap.h"
+#include "../arch/i386/array.h"
 #include <kernel/portio.h>
 
 #define INDEX_GET(i) (i / PAGE_SIZE_HEX)
@@ -12,7 +13,7 @@
 extern void *end_kernel;
 uintptr_t kernel_pointer = (uintptr_t)&end_kernel;
 
-struct bitmap frame_bitmap;
+bitmap_t frame_bitmap;
 
 const uint32_t PAGE_SIZE_HEX = 0x1000;
 const int PAGE_SIZE_DEC = 4096;
@@ -29,35 +30,24 @@ extern void enablePaging();
 void frame_set(void * addr)
 {
   uint32_t index = INDEX_GET((uint32_t)addr);
-  frame_bitmap.entries[index] = USED;
+  bitmap_entrie_set(index, USED, frame_bitmap);
 }
 
 void frame_free(void * addr)
 {
   uint32_t index = INDEX_GET((uint32_t)addr);
-  frame_bitmap.entries[index] = FREE;
+  bitmap_entrie_set(index, FREE, frame_bitmap);
 }
 
 int frame_test(void * addr)
 {
   uint32_t index = INDEX_GET((uint32_t)addr);
-  return frame_bitmap.entries[index];
+  return bitmap_entrie_check(index, frame_bitmap);
 }
 
 void * frame_find()
 {
-  uint32_t i = 0;
-  while(frame_bitmap.entries[i] != FREE)
-  {
-    if(ADDR_GET(i) == frame_bitmap.number)
-    {
-      return -1;
-    }
-
-    i++;
-  }
-
-  return (void *)ADDR_GET(i);
+  return (void *)ADDR_GET(bitmap_entrie_find(0x1, 0, frame_bitmap));
 }
 
 void * frame_alloc()
@@ -116,9 +106,7 @@ void page_fault(uint32_t int_ctx)
 
 void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
 {
-  frame_bitmap.number = (uint32_t)mem_upper / 4;
-  frame_bitmap.entries = ponter_move_int((frame_bitmap.number / ADDRESS_SIZE_HEX), 0, 1);
-  memset(frame_bitmap.entries, 0, frame_bitmap.number / ADDRESS_SIZE_HEX);
+  frame_bitmap = bitmap_create((uint32_t)mem_upper / 4);
 
   //Map phy addr's for kernel
   uint32_t i = 0;

@@ -1,12 +1,6 @@
 #ifndef _COMETOS_ARCH_I386_PAGING_H
 #define _COMETOS_ARCH_I386_PAGING_H
 
-struct bitmap
-{
-	uintptr_t *entries;
-	uint32_t number;
-}__attribute__((packed));
-
 __attribute__((unused))
 static inline void flush_tlb(unsigned long addr)
 {
