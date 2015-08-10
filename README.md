@@ -15,10 +15,14 @@ Currently supported elements:
 - keybord input
 - IRQ's
 - Paging
-- Heap
 - Timer
 - Time and date
 - VFS
+
+Working on
+- Heap
+- Paging
+- Arrays
 
 Todo elements:
 
@@ -46,7 +50,7 @@ Todo elements:
 
 ## Compatibility with computers
 
-At the moment we using grub which is a free open source bootloader. Many operating systems used grub like ubuntu. In the future we plan to have our own custom bootloader.
+At the moment I using grub which is a free open source bootloader. In the future i could create my own custom bootloader.
 
 ## How to build/install
 
