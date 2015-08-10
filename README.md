@@ -3,7 +3,7 @@
 
 CometOS is an operating system for x86 PCs, written in assembly language and C.
 
-<img src="documentation/images/CometOS-kernel-2015-08-06.png" alt="Logo" height="720" width="400">
+<img src="documentation/images/-CometOS-kernel-2015-08-06" alt="Kernel" height="400" width="720">
 
 ## Features
 
