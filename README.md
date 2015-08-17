@@ -3,6 +3,8 @@
 
 CometOS is an operating system for x86 PCs, written in assembly language and C.
 
+<img src="https://raw.githubusercontent.com/JohannMassyn/CometOS/master/documentation/images/%20CometOS-kernel-2015-08-06.png" alt="Kernel" height="400" width="720">
+
 ## Features
 
 Currently supported elements:
@@ -13,10 +15,14 @@ Currently supported elements:
 - keybord input
 - IRQ's
 - Paging
-- Heap
 - Timer
 - Time and date
 - VFS
+
+Working on
+- Heap
+- Paging
+- Arrays
 
 Todo elements:
 
@@ -44,7 +50,7 @@ Todo elements:
 
 ## Compatibility with computers
 
-At the moment we using grub which is a free open source bootloader. Many operating systems used grub like ubuntu. In the future we plan to have our own custom bootloader.
+At the moment I using grub which is a free open source bootloader. In the future i could create my own custom bootloader.
 
 ## How to build/install
 
