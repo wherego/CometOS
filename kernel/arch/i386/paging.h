@@ -9,6 +9,7 @@ static inline void flush_tlb(unsigned long addr)
 
 void * frame_alloc();
 int frame_test(void * addr);
+void frame_free();
 
 void * table_create(unsigned int flags);
 void table_unmap(void * directory, unsigned long pdindex);
@@ -25,5 +26,10 @@ void * page_map(void * physaddr, void * virtualaddr, unsigned int flags);
 int page_unmap(void * virtualaddr);
 void * page_physaddr(void * virtualaddr);
 uint32_t page_getsize(void);
+
+int liballoc_lock();
+int liballoc_unlock();
+void * liballoc_alloc(int n);
+int liballoc_free(void * addr, int n);
 
 #endif

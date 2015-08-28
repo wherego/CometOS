@@ -20,6 +20,7 @@
 #include "../arch/i386/heap.h"
 #include "../arch/i386/task.h"
 #include "../arch/i386/array.h"
+#include "../arch/i386/liballoc.h"
 #endif
 
 uint32_t initial_esp;
@@ -61,32 +62,6 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	/*uint32_t *ptr = (uint32_t*)0xA0000000;
 	uint32_t do_page_fault = *ptr;
 	printf(do_page_fault);*/
-
-	array_t * array = array_create(0);
-
-	array_node_t * anode = array_node_create(0x0, NULL);
-	array_node_sort(anode, array);
-
-	array_node_t * bnode = array_node_create(0x1, NULL);
-	array_node_sort(bnode, array);
-
-	array_node_t * cnode = array_node_create(0x3, NULL);
-	array_node_sort(cnode, array);
-
-	array_node_t * tnode = array_node_find(4, array);
-
-	terminal_setcolor(make_color(COLOR_LIGHT_BLUE, COLOR_BLACK));
-	printf("\nArray:%x | Order:%x | Start:%x | End:%x\n", array, array->order, array->start, array->end);
-	terminal_setcolor(make_color(COLOR_LIGHT_RED, COLOR_BLACK));
-	printf("NODE A:%x | index:%x | next:%x | prev:%x\n", anode, anode->index, anode->next, anode->prev);
-	printf("NODE B:%x | index:%x | next:%x | prev:%x\n", bnode, bnode->index, bnode->next, bnode->prev);
-	printf("NODE C:%x | index:%x | next:%x | prev:%x\n", cnode, cnode->index, cnode->next, cnode->prev);
-	terminal_setcolor(make_color(COLOR_LIGHT_GREEN, COLOR_BLACK));
-	printf("Find:%x | index:%x | next:%x | prev:%x\n", tnode, tnode->index, tnode->next, tnode->prev);
-	terminal_setcolor(make_color(COLOR_BLUE, COLOR_BLACK));
-	
-	printf("DELETE ARRAY:%x", array_delete(array));
-	terminal_setcolor(make_color(COLOR_LIGHT_GREY, COLOR_BLACK));
 
     for (;;); //main loop
 }

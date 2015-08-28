@@ -4,6 +4,8 @@
 #include "../arch/i386/array.h"
 #include "../arch/i386/paging.h"
 
+//TODO: Make array and bitmap fucntions use a malloc fuction.
+
 bitmap_t bitmap_create(uint32_t size)
 {
 	bitmap_t bitmap;
@@ -62,7 +64,7 @@ void bitmap_map(uint32_t start, uint32_t end, int value, bitmap_t bitmap)
 		return;
 	}
 
-	while(i <= end)
+	while(i < end)
 	{
 		bitmap_entrie_set(i, value, bitmap);
 		i++;
@@ -99,6 +101,11 @@ array_node_t * array_node_create(uint32_t index, void * value)
 
 array_node_t * array_node_find(uint32_t index, array_t * array)
 {
+	if(array == NULL || array->start == NULL)
+	{
+		return NULL;
+	}
+
 	array_node_t * node = array->start;
 	int end = 0;
 
@@ -177,8 +184,6 @@ array_node_t * array_node_sort(array_node_t * node, array_t * array)
 				index->prev = node;
 
 				array->size ++;
-
-				printf("test");
 
 				return node;
 			}
@@ -272,8 +277,8 @@ int array_delete(array_t * array)
 	if(array_node_delete(node))
 	{
 		void * addr = page_physaddr(array);
-		page_unmap(array);
 		frame_free(addr);
+		page_unmap(array);
 
 		return 1;
 	}

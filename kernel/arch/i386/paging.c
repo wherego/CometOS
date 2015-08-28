@@ -5,6 +5,7 @@
 #include "../arch/i386/paging.h"
 #include "../arch/i386/heap.h"
 #include "../arch/i386/array.h"
+
 #include <kernel/portio.h>
 
 #define INDEX_GET(i) (i / PAGE_SIZE_HEX)
@@ -14,6 +15,7 @@ extern void *end_kernel;
 uintptr_t kernel_pointer = (uintptr_t)&end_kernel;
 
 bitmap_t frame_bitmap;
+heap_t * kernel_heap;
 
 const uint32_t PAGE_SIZE_HEX = 0x1000;
 const int PAGE_SIZE_DEC = 4096;
@@ -107,8 +109,11 @@ void page_fault(uint32_t int_ctx)
 void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
 {
   frame_bitmap = bitmap_create((uint32_t)mem_upper / 4);
+  kernel_heap = heap_create(mem_upper, 0x0, 1, 0);
+  //bitmap_map(0, INDEX_GET(kernel_pointer), 0x1, kernel_heap->bitmap); TODO: fix the maping.
+  log_print(NOTICE, "Kernel Heap");
 
-  //Map phy addr's for kernel
+  //Map phy addr's and heap for kernel
   uint32_t i = 0;
   while(i < kernel_pointer)
   {
@@ -138,7 +143,6 @@ void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
 void * table_create(unsigned int flags)
 {
   uint32_t * table = frame_alloc();
-
   if(table == NULL)
   {
     return NULL;
@@ -341,4 +345,26 @@ void paging_enable(void)
 uint32_t page_getsize(void)
 {
   return PAGE_SIZE_HEX;
+}
+
+/////////////////////////// Heap lib stuff ///////////////////////
+
+int liballoc_lock()
+{
+  return heap_lock();
+}
+
+int liballoc_unlock()
+{
+  return heap_unlock();
+}
+
+void * liballoc_alloc(int n)
+{
+  return heap_alloc(n, kernel_heap);
+}
+
+int liballoc_free(void * addr, int n)
+{
+  return heap_free(addr, n, kernel_heap);
 }
