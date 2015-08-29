@@ -142,19 +142,19 @@ int log_print(enum debug_status status, const char* restrict format, ...)
 
 	if (status == 0)
 	{
-		//#ifdef DEBUG
-		printf("[");
-		terminal_setcolor(make_color(COLOR_GREEN, COLOR_BLACK));
-		printf("OK");
-		terminal_setcolor(make_color(COLOR_LIGHT_GREY, COLOR_BLACK));
-		printf("]");
-		printf(" [%i.%i:%i:%d] %s\n", time_get(2), time_get(1), time_get(0), format, buffer);
-		//#endif
+		#ifdef DEBUG
+			printf("[");
+			terminal_setcolor(make_color(COLOR_GREEN, COLOR_BLACK));
+			printf("OK");
+			terminal_setcolor(make_color(COLOR_LIGHT_GREY, COLOR_BLACK));
+			printf("]");
+			printf(" [%i.%i:%i:%d] %s\n", time_get(2), time_get(1), time_get(0), format, buffer);
+		#endif
 	}
 	else
 	{
-		//#ifdef DEBUG
-		printf("[%i.%i:%i:%d] %s\n", time_get(2), time_get(1), time_get(0), format, buffer);
-		//#endif
+		#ifdef DEBUG
+			printf("[%i.%i:%i:%d] %s\n", time_get(2), time_get(1), time_get(0), format, buffer);
+		#endif
 	}
 }

@@ -45,23 +45,19 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	log_print(INFO, "Interupts On\n");
 #endif
 
-	//#ifdef DEBUG
+#ifdef DEBUG
 	multiboot_print(mboot_ptr);
 	printf("--------------------------------------------------\n");
-	//#endif
+#endif
 
 	printf("CometOS ver 0.0.0  -  time:%i:%i:%i\n",time_get(2), time_get(1), time_get(0));
-	printf("Hello, kernel World!");
-
-#if DEBUG
-
-	printf("DEBUG\n");
-
-#endif
+	printf("Hello, kernel World!\n");
 
 	/*uint32_t *ptr = (uint32_t*)0xA0000000;
 	uint32_t do_page_fault = *ptr;
 	printf(do_page_fault);*/
+
+	//printf("A:%x", malloc(sizeof(int)));
 
     for (;;); //main loop
 }

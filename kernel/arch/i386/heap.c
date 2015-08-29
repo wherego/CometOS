@@ -48,8 +48,7 @@ void * heap_alloc(int number, heap_t * heap)
 
     		i += page_getsize();
   		}
-
-  		printf("addr:%x\n", addr);
+  		
 		return (void *)addr;
 	}
 

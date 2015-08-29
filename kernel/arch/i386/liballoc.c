@@ -8,7 +8,7 @@
 
 /**  Durand's Ridiculously Amazing Super Duper Memory functions.  */
 
-//#define DEBUG	
+#define DEBUG	
 
 #define LIBALLOC_MAGIC	0xc001c0de
 #define MAXCOMPLETE		5
@@ -121,23 +121,23 @@ static void dump_array()
 
 		for ( i = 0; i < MAXEXP; i++ )
 		{
-			printf("%.2i(%i): ",i, l_completePages[i] );
+			//printf("%.2i(%i): ",i, l_completePages[i] );
 	
 			tag = l_freePages[ i ];
 			while ( tag != NULL )
 			{
 				if ( tag->split_left  != NULL  ) printf("*");
-				printf("%i", tag->real_size );
+				//printf("%i", tag->real_size );
 				if ( tag->split_right != NULL  ) printf("*");
 	
-				printf(" ");
+				//printf(" ");
 				tag = tag->next;
 			}
-			printf("\n");
+			//printf("\n");
 		}
 
 	printf("'*' denotes a split to the left/right of a tag\n");
-	fflush( stdout );
+	//fflush( stdout );
 }
 #endif
 

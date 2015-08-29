@@ -18,11 +18,8 @@ export BOOTDIR=/boot
 export LIBDIR=$EXEC_PREFIX/lib
 export INCLUDEDIR=$PREFIX/include
 
-export CFLAGS='-O2 -g'
-export CPPFLAGS=''
-
-export QEMU_DEBUG=""
-export GCC_DEBUG=""
+export CFLAGS='-O2'
+export CPPFLAGS='-DDEBUG'
 
 # Configure the cross-compiler to use the desired system root.
 export CC="$CC --sysroot=$PWD/sysroot"

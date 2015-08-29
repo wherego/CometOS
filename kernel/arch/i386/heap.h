@@ -16,5 +16,7 @@ heap_t * heap_create(void * start, void * end, int rw, int usermode);
 int heap_delete(heap_t * heap);
 void * heap_alloc(int number, heap_t * heap);
 int heap_free(void * addr, int number, heap_t * heap);
+int heap_lock(void);
+int heap_unlock(void);
 
 #endif

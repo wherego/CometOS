@@ -2,18 +2,6 @@
 set -e
 . ./build.sh
 
-while test $# -gt 0; do
-    case "$1" in
-	-d|--quick)
-            GCC_DEBUG="-g"
-            break
-	    ;;
-        *)
-            break
-            ;;
-    esac
-done
-
 mkdir -p isodir
 mkdir -p isodir/boot
 mkdir -p isodir/boot/grub
