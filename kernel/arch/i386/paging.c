@@ -1,6 +1,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <kernel/tty.h>
+#include <kernel/vga.h>
+
 #include "../arch/i386/log.h"
 #include "../arch/i386/paging.h"
 #include "../arch/i386/heap.h"
@@ -11,11 +14,16 @@
 #define INDEX_GET(i) (i / PAGE_SIZE_HEX)
 #define ADDR_GET(i) (i * PAGE_SIZE_HEX)
 
+#define DIR_GET(i) (((i) >> 22) & 0x3ff)
+#define TLB_GET(i) (((i) >> 12) & 0x3ff)
+#define PHY_GET(i) (i & ~0xfff)
+
 extern void *end_kernel;
 uintptr_t kernel_pointer = (uintptr_t)&end_kernel;
 
-bitmap_t frame_bitmap;
+bitmap_t * frame_bitmap;
 heap_t * kernel_heap;
+int paging_state = 0;
 
 const uint32_t PAGE_SIZE_HEX = 0x1000;
 const int PAGE_SIZE_DEC = 4096;
@@ -61,7 +69,7 @@ void * frame_alloc()
   }
 
   frame_set(frame);
-  return frame;
+  return (void *)frame;
 }
 
 void * ponter_move_int(uint32_t size, uint32_t * physaddr, int align)
@@ -94,7 +102,13 @@ void page_fault(uint32_t int_ctx)
   int reserved = int_ctx & 0x8;
   int id = int_ctx & 0x10;
 
-  printf("\n|---------------- Page Fault ----------------|\n");
+  printf("\n\n|---------------- ");
+  terminal_setcolor(make_color(COLOR_RED, COLOR_BLACK));
+  printf("Page Fault");
+  terminal_setcolor(make_color(COLOR_LIGHT_GREY, COLOR_BLACK));
+  printf(" ----------------|\n");
+
+  terminal_setcolor(make_color(COLOR_LIGHT_BLUE, COLOR_BLACK));
 
   printf("Address: 0x%x\n", addr);
   printf("Present: %i\n", present);
@@ -103,7 +117,8 @@ void page_fault(uint32_t int_ctx)
   printf("Reserved: %i\n", reserved);
   printf("ID: %i\n", id);
 
-  printf("|--------------------------------------------|\n");
+  terminal_setcolor(make_color(COLOR_LIGHT_GREY, COLOR_BLACK));
+  printf("|--------------------------------------------|");
 }
 
 void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
@@ -132,11 +147,13 @@ void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
     page_map(i, i, 3);
     i += PAGE_SIZE_HEX;
   }
+  printf("%x\n", (uint32_t)kernel_pointer / 0x400);
 
   isr_install_handler(14, page_fault);
 
   //Enable paging
   paging_enable();
+  paging_state = 1;
   log_print(NOTICE, "Paging");
 }
 
@@ -147,12 +164,28 @@ void * table_create(unsigned int flags)
   {
     return NULL;
   }
-  
-  int i;
-  for(i = 0; i < ENTRY_SIZE_DEC; i++)
+
+  if(paging_state == 0)
+  {
+    int i;
+    for(i = 0; i < ENTRY_SIZE_DEC; i++)
     {
-      table[i] = (i * PAGE_SIZE_HEX) | flags;
+      table[i] = (i * PAGE_SIZE_HEX) | 3;
     }
+  }
+  else
+  {
+    memset(table, 0, table + PAGE_SIZE_HEX);
+
+    if(flags)
+    {
+      int i;
+      for(i = 0; i < ENTRY_SIZE_DEC; i++)
+      {
+        table[i] |= flags;
+      }
+    }
+  }
 
   return table;
 }
@@ -250,83 +283,82 @@ void * page_map(void * physaddr, void * virtualaddr, unsigned int flags)
     return NULL;
   }
 
-  unsigned long page_index = (unsigned long)virtualaddr / PAGE_SIZE_HEX;
-  unsigned long pdindex = (unsigned long)page_index / ENTRY_SIZE_HEX;
-  unsigned long ptindex = (unsigned long)page_index % ENTRY_SIZE_HEX;
+  uint32_t * pd = directory_get();
+  uint32_t pdindex = DIR_GET((uint32_t)virtualaddr);
 
-  unsigned long * pd = (unsigned long *)directory_get(); 
-  // Seek out or create Pagetable
-  if ((((unsigned int)pd[pdindex]) & USED) != USED)
+  if((((unsigned int)pd[pdindex]) & USED) != USED)
   {
     uint32_t * page_table = table_create(3);
     table_map(pd, pdindex, page_table, 3);
+    printf("Table> Pd:%x | pdindex:%x | page_table%x\n", pd, pdindex, page_table);
   }
 
-  unsigned long * pt = ((unsigned long *)pd) + (ENTRY_SIZE_HEX * pdindex);
-  if ((unsigned int)pt[ptindex] & USED)
+  uint32_t * pt = (uint32_t *)PHY_GET((uint32_t)pd[pdindex]);
+  uint32_t ptindex = (uint32_t)TLB_GET((uint32_t)virtualaddr);
+
+  /*if(((unsigned int)pt[ptindex]) & USED)
   {
     return NULL;
-  }
+  }*/ //TODO Fix this.
 
-  pt[ptindex] = ((unsigned long)physaddr) | (flags & 0xFFF) | USED;
+  pt[ptindex] = (uint32_t)physaddr | (uint32_t)flags | USED;
   flush_tlb(virtualaddr);
 
-  return (void *)physaddr;
+  return (void *)virtualaddr;
 }
 
 int page_unmap(void * virtualaddr)
 {
-  if ((unsigned int)virtualaddr & 0xFFF)
+  if((unsigned int)virtualaddr & 0xFFF)
   {
     return 0;
   }
 
-  unsigned long page_index = (unsigned long)virtualaddr / PAGE_SIZE_HEX;
-  unsigned long pdindex = (unsigned long)page_index / ENTRY_SIZE_HEX;
-  unsigned long ptindex = (unsigned long)page_index % ENTRY_SIZE_HEX;
+  uint32_t * pd = directory_get();
+  uint32_t pdindex = DIR_GET((uint32_t)virtualaddr);
 
-  unsigned long * pd = (unsigned long *)directory_get();
-
-  if ((((unsigned int)pd[pdindex]) & USED) != USED)
+  if((((unsigned int)pd[pdindex]) & USED) != USED)
   {
     return 1;
   }
 
-  unsigned long * pt = ((unsigned long *)pd) + (ENTRY_SIZE_HEX * pdindex);
-  if ((((unsigned int)pt[ptindex]) & USED) != USED)
+  uint32_t * pt = (uint32_t *)PHY_GET((uint32_t)pd[pdindex]);
+  uint32_t ptindex = (uint32_t)TLB_GET((uint32_t)virtualaddr);
+
+  if((((unsigned int)pd[pdindex]) & USED) != USED)
   {
     return 1;
   }
 
-  pt[ptindex] = 0x00000000;
+  pt[ptindex] &= 0x00000000;
   flush_tlb(virtualaddr);
-
   return 1;
 }
 
 void * page_physaddr(void * virtualaddr)
 {
-  unsigned long page_index = (unsigned long)virtualaddr / PAGE_SIZE_HEX;
-  unsigned long pdindex = (unsigned long)page_index / ENTRY_SIZE_HEX;
-  unsigned long ptindex = (unsigned long)page_index % ENTRY_SIZE_HEX;
- 
-  unsigned long * pd = (unsigned long *)directory_get();
+  if((unsigned int)virtualaddr & 0xFFF)
+  {
+    return NULL;
+  }
 
-  //Check whether the PD entry is present.
+  uint32_t * pd = directory_get();
+  uint32_t pdindex = DIR_GET((uint32_t)virtualaddr);
+
   if((((unsigned int)pd[pdindex]) & USED) != USED)
   {
     return NULL;
   }
- 
- unsigned long * pt = ((unsigned long *)pd) + (ENTRY_SIZE_HEX * pdindex);
 
-  //Check whether the PT entry is present.
+  uint32_t * pt = (uint32_t *)PHY_GET((uint32_t)pd[pdindex]);
+  uint32_t ptindex = (uint32_t)TLB_GET((uint32_t)virtualaddr);
+  
   if((((unsigned int)pt[ptindex]) & USED) != USED)
   {
     return NULL;
   }
  
-  return (void *)((pt[ptindex] & ~0xFFF) + ((unsigned long)virtualaddr & 0xFFF));
+  return (void *)((pt[ptindex] & ~0xFFF) + ((uint32_t)virtualaddr & 0xFFF));
 }
 
 void directory_load(void * addr)
@@ -367,4 +399,40 @@ void * liballoc_alloc(int n)
 int liballoc_free(void * addr, int n)
 {
   return heap_free(addr, n, kernel_heap);
+}
+
+void * kmalloc(size_t size)
+{
+  if(paging_state)
+  {
+    return malloc(size);
+  }
+
+  return ponter_move_int(size, 0, 1);
+}
+
+void * krealloc(void * addr, size_t size)
+{
+  if(paging_state)
+  {
+    return realloc(addr, size);
+  }
+
+  return ponter_move_int(size, 0, 1);
+}
+
+void * kcalloc(size_t sizeold, size_t sizenew)
+{
+  if(paging_state)
+  {
+    return calloc(sizeold, sizenew);
+  }
+
+  return ponter_move_int(sizenew, 0, 1);
+}
+
+void kfree(void * addr)
+{
+  if(paging_state)
+    free(addr);
 }
