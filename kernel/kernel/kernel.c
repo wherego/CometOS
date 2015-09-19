@@ -45,8 +45,8 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 		log_print(INFO, "Interupts On");
 	#endif
 
-	floppy_drive_set(0);
 	floppy_initialize(6);
+	floppy_drive_set(0);
 #endif
 
 	#ifdef DEBUG
@@ -58,8 +58,8 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	printf("Hello, kernel World!\n");
 
 	uint8_t * sector = floppy_read(0);
-	printf("Sector:\n");
-	
+	printf("Sector:%x\n", sector);
+
 	int i = 0;
 	for(int c = 0; c < 4; c++)
 	{

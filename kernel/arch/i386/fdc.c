@@ -14,7 +14,6 @@ static volatile uint8_t FloppyDiskIRQ = 0;
 
 void floppy_set_dma(int addr)
 {
-
 	DMA_BUFFER = addr;
 }
 
@@ -47,7 +46,7 @@ void floppy_dma_write(void)
 
 uint8_t floppy_read_status(void)
 {
-	return inport8 (FLOPPY_MSR);
+	return inport8(FLOPPY_MSR);
 }
 
 void floppy_write_dor(uint8_t val)
@@ -90,7 +89,7 @@ inline void floppy_wait_irq(void)
 	FloppyDiskIRQ = 0;
 }
 
-void i86_flpy_irq(void)
+void floppy_irq(void)
 {
 	FloppyDiskIRQ = 1;
 }
@@ -274,7 +273,8 @@ void floppy_convert(int lba,int *head,int *track,int *sector)
 
 void floppy_initialize(int irq)
 {
-	irq_install_handler(irq, i86_flpy_irq);
+	irq_install_handler(irq, floppy_irq);
+	floppy_set_dma(malloc(512));
 	floppy_dma_initialize();
 	floppy_reset();
 	floppy_drive_data(13, 1, 0xf, 1);
@@ -306,14 +306,14 @@ uint8_t* floppy_read(int sectorLBA)
 	int head=0, track=0, sector=1;
 	floppy_convert(sectorLBA, &head, &track, &sector);
 
-	floppy_control_motor (1);
+	floppy_control_motor(1);
 	if (floppy_seek(track, head) != 0)
 	{
 		return 0;
 	}
 
-	floppy_read_sector_imp (head, track, sector);
-	floppy_control_motor (0);
+	floppy_read_sector_imp(head, track, sector);
+	floppy_control_motor(0);
 
 	return (uint8_t*)DMA_BUFFER;
 }
