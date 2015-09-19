@@ -2,8 +2,8 @@
 #include "../arch/i386/log.h"
 #include "../arch/i386/task.h"
 
-long timer_ticks = 0;
-unsigned long ticker = 0;
+volatile long timer_ticks = 0;
+volatile unsigned long ticker = 0;
 
 void pit_phase(int hz)
 {
@@ -16,17 +16,16 @@ void pit_phase(int hz)
 void pit_handler(struct regs *r)
 {
 	++timer_ticks;
-	if (timer_ticks % 18 == 0)
-	{
-		++ticker;
-	}
 }
 
 void sleep(int ticks)
 {
-long eticks;
-eticks = (long)timer_ticks + (long)ticks;
-while(timer_ticks < eticks);
+	long eticks;
+	eticks = (long)timer_ticks + (long)ticks;
+	while(timer_ticks < eticks)
+	{
+		asm("hlt");
+	}
 }
 
 void pit_install(void)
