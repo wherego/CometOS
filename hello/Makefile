@@ -24,3 +24,5 @@ clean:
 install: hello
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp hello $(DESTDIR)$(BINDIR)
+
+

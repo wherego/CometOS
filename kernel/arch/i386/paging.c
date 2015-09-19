@@ -124,8 +124,8 @@ void page_fault(uint32_t int_ctx)
 void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
 {
   frame_bitmap = bitmap_create((uint32_t)mem_upper / 4);
-  kernel_heap = heap_create(mem_upper, 0x0, 1, 0);
-  //bitmap_map(0, INDEX_GET(kernel_pointer), 0x1, kernel_heap->bitmap); TODO: fix the maping.
+  kernel_heap = heap_create(mem_upper, 0, 1, 0);
+  //bitmap_map(0, INDEX_GET(kernel_pointer), 0x1, kernel_heap->bitmap);
   log_print(NOTICE, "Kernel Heap");
 
   //Map phy addr's and heap for kernel
@@ -147,7 +147,6 @@ void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
     page_map(i, i, 3);
     i += PAGE_SIZE_HEX;
   }
-  printf("%x\n", (uint32_t)kernel_pointer / 0x400);
 
   isr_install_handler(14, page_fault);
 
@@ -290,7 +289,6 @@ void * page_map(void * physaddr, void * virtualaddr, unsigned int flags)
   {
     uint32_t * page_table = table_create(3);
     table_map(pd, pdindex, page_table, 3);
-    printf("Table> Pd:%x | pdindex:%x | page_table%x\n", pd, pdindex, page_table);
   }
 
   uint32_t * pt = (uint32_t *)PHY_GET((uint32_t)pd[pdindex]);
@@ -381,26 +379,6 @@ uint32_t page_getsize(void)
 
 /////////////////////////// Heap lib stuff ///////////////////////
 
-int liballoc_lock()
-{
-  return heap_lock();
-}
-
-int liballoc_unlock()
-{
-  return heap_unlock();
-}
-
-void * liballoc_alloc(int n)
-{
-  return heap_alloc(n, kernel_heap);
-}
-
-int liballoc_free(void * addr, int n)
-{
-  return heap_free(addr, n, kernel_heap);
-}
-
 void * kmalloc(size_t size)
 {
   if(paging_state)
@@ -418,7 +396,7 @@ void * krealloc(void * addr, size_t size)
     return realloc(addr, size);
   }
 
-  return ponter_move_int(size, 0, 1);
+  return ponter_move_int(size, 0, 0);
 }
 
 void * kcalloc(size_t sizeold, size_t sizenew)
@@ -435,4 +413,29 @@ void kfree(void * addr)
 {
   if(paging_state)
     free(addr);
+}
+
+int liballoc_lock()
+{
+  heap_lock();
+}
+
+int liballoc_unlock(void)
+{
+  heap_unlock();
+}
+
+void* liballoc_alloc(int n)
+{
+  return heap_alloc(((uint32_t)n) * page_getsize(), kernel_heap);
+}
+
+int liballoc_free(void* addr, int n)
+{
+  if(heap_free(addr, ((uint32_t)n) * page_getsize(), kernel_heap))
+  {
+    return 0;
+  }
+
+  return 1;
 }

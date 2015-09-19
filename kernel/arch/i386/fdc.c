@@ -208,9 +208,7 @@ void floppy_reset(void)
 	}
 
 	floppy_write_ccr (0);
-
 	floppy_drive_data (3,16,240, 1);
-
 	floppy_calibrate (CurrentDrive);
 }
 
@@ -278,7 +276,7 @@ void floppy_initialize(int irq)
 {
 	irq_install_handler(irq, i86_flpy_irq);
 	floppy_dma_initialize();
-	//floppy_reset();
+	floppy_reset();
 	floppy_drive_data(13, 1, 0xf, 1);
 	log_print(NOTICE, "FDC");
 }

@@ -96,9 +96,7 @@ enum FLOPPY_SECTOR_DTL
 
 void floppy_initialize(int irq);
 void floppy_drive_set(uint8_t drive);
-void floppy_set_dma(int addr);
 void floppy_convert(int lba,int *head,int *track,int *sector);
-
 uint8_t floppy_drive_get(void);
 uint8_t* floppy_read(int sectorLBA);
 

@@ -1,6 +1,8 @@
 #ifndef _COMETOS_ARCH_I386_PAGING_H
 #define _COMETOS_ARCH_I386_PAGING_H
 
+#include <string.h>
+
 __attribute__((unused))
 static inline void flush_tlb(unsigned long addr)
 {
@@ -31,5 +33,10 @@ int liballoc_lock();
 int liballoc_unlock();
 void * liballoc_alloc(int n);
 int liballoc_free(void * addr, int n);
+
+void * kmalloc(size_t size);
+void * krealloc(void * addr, size_t size);
+void * kcalloc(size_t sizeold, size_t sizenew);
+void kfree(void * addr);
 
 #endif

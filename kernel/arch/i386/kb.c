@@ -3,6 +3,9 @@
 #include <kernel/kbdus.h>
 
 #include "../arch/i386/log.h"
+#include "../arch/i386/heap.h"
+
+extern heap_t* kernel_heap;
 
 #define KB_SCANCODE 0x60
 #define KB_BRAKECODE 0x80
@@ -17,10 +20,6 @@ volatile int kb_count_raw = 0; //Position in buffer
 unsigned short kb_ltmp;
 volatile int kb_shift_flag=0;
 volatile int kb_caps_flag=0;
-
-char* get_buffer;
-int get_count;
-int get = 0;
 
 /* Handles the keyboard interrupt */
 void keyboard_handler(struct interrupt_context* int_ctx)
@@ -109,6 +108,30 @@ void keyboard_handler(struct interrupt_context* int_ctx)
       }
 
       //TODO add echo toggle
+      if(kbdus[scancode] == '1')
+      {
+        printf("Doing Page fault Enjoy! - (remove in kb.c)");
+        uint32_t *ptr = (uint32_t*)0xA0000000;
+        uint32_t do_page_fault = *ptr;
+        printf(do_page_fault);
+        return;
+      }
+
+      if(kbdus[scancode] == '2')
+      {
+        //volatile int test = heap_alloc(0x40, kernel_heap);
+        volatile void * addr = heap_alloc(0x1000, kernel_heap);
+        printf("Addr:%x\n", addr);
+        return;
+      }
+
+      if(kbdus[scancode] == '3')
+      {
+        volatile void * addr = malloc(sizeof(int));
+        printf("Addr:%x\n", addr);
+        return;
+      }
+
       terminal_putchar(kbdus[scancode]);
     }
 }

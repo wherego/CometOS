@@ -1,14 +1,11 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "../arch/i386/log.h"
 #include "../arch/i386/paging.h"
 #include "../arch/i386/heap.h"
-#include "../arch/i386/array.h"
 #include "../arch/i386/liballoc.h"
-
-/**  Durand's Ridiculously Amazing Super Duper Memory functions.  */
-
-#define DEBUG	
+#include <kernel/portio.h>
 
 #define LIBALLOC_MAGIC	0xc001c0de
 #define MAXCOMPLETE		5
@@ -37,7 +34,7 @@ unsigned int l_inuse = 0;			//< The amount of memory in use (malloc'ed).
 
 static int l_initialized = 0;			//< Flag to indicate initialization.	
 static int l_pageSize  = 4096;			//< Individual page size
-static int l_pageCount = 16;			//< Minimum number of pages to allocate.
+static int l_pageCount = 1;			//< Minimum number of pages to allocate.
 
 
 // ***********   HELPER FUNCTIONS  *******************************
@@ -121,19 +118,19 @@ static void dump_array()
 
 		for ( i = 0; i < MAXEXP; i++ )
 		{
-			//printf("%.2i(%i): ",i, l_completePages[i] );
+			printf("%.2i(%i): ",i, l_completePages[i] );
 	
 			tag = l_freePages[ i ];
 			while ( tag != NULL )
 			{
 				if ( tag->split_left  != NULL  ) printf("*");
-				//printf("%i", tag->real_size );
+				printf("%i", tag->real_size );
 				if ( tag->split_right != NULL  ) printf("*");
 	
-				//printf(" ");
+				printf(" ");
 				tag = tag->next;
 			}
-			//printf("\n");
+			printf("\n");
 		}
 
 	printf("'*' denotes a split to the left/right of a tag\n");
@@ -535,6 +532,3 @@ void*   realloc(void *p, size_t size)
 
 	return ptr;
 }
-
-
-

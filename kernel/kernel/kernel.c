@@ -39,25 +39,36 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	keyboard_install();
 	pit_install();
 	paging_initialize(mboot_ptr->mem_lower, mboot_ptr->mem_upper);
+
 	sti(); //turn on interupts
-	floppy_initialize(38);
-	floppy_set_dma(0x8000);
-	log_print(INFO, "Interupts On\n");
+	#ifdef DEBUG
+		log_print(INFO, "Interupts On");
+	#endif
+
+	floppy_drive_set(0);
+	floppy_initialize(6);
 #endif
 
-#ifdef DEBUG
-	multiboot_print(mboot_ptr);
-	printf("--------------------------------------------------\n");
-#endif
+	#ifdef DEBUG
+		multiboot_print(mboot_ptr);
+		printf("--------------------------------------------------\n");
+	#endif
 
 	printf("CometOS ver 0.0.0  -  time:%i:%i:%i\n",time_get(2), time_get(1), time_get(0));
 	printf("Hello, kernel World!\n");
 
-	/*uint32_t *ptr = (uint32_t*)0xA0000000;
-	uint32_t do_page_fault = *ptr;
-	printf(do_page_fault);*/
-
-	//printf("A:%x", malloc(sizeof(int)));
+	uint8_t * sector = floppy_read(0);
+	printf("Sector:\n");
+	
+	int i = 0;
+	for(int c = 0; c < 4; c++)
+	{
+		for(int j = 0; j < 128; j++)
+		{
+			printf("%x", sector[i + j]);
+			i += 128;
+		}
+	}
 
     for (;;); //main loop
 }

@@ -6,40 +6,38 @@
 
 //TODO: Make array and bitmap fucntions use a malloc fuction.
 
-bitmap_t bitmap_create(uint32_t size)
+bitmap_t * bitmap_create(uint32_t size)
 {
-	bitmap_t bitmap;
-	//bitmap = (bitmap_t)ponter_move_int(sizeof(bitmap_t), 0, 1);
+	bitmap_t * bitmap = (bitmap_t *)kmalloc(sizeof(bitmap_t));
 
-	bitmap.size = size;
-	bitmap.entries = ponter_move_int((bitmap.size / 0x20), 0, 1);
+	bitmap->size = size;
+	bitmap->entries = kmalloc(bitmap->size / 0x20);
 
-	//memset(bitmap.entries, 0, bitmap.size / 0x20);
-	bitmap_map(0, bitmap.size, 0, bitmap);
+	bitmap_map(0, bitmap->size, 0, bitmap);
 
 	return bitmap;
 }
 
-uint32_t bitmap_entrie_set(uint32_t index, int value, bitmap_t bitmap)
+uint32_t bitmap_entrie_set(uint32_t index, int value, bitmap_t * bitmap)
 {
-	return bitmap.entries[index] = value; 
+	return bitmap->entries[index] = value; 
 }
 
-int bitmap_entrie_check(uint32_t index, bitmap_t bitmap)
+int bitmap_entrie_check(uint32_t index, bitmap_t * bitmap)
 {
-	return (int)bitmap.entries[index];
+	return (int)bitmap->entries[index];
 }
 
-uint32_t bitmap_entrie_find(uint32_t size, int value, bitmap_t bitmap)
+uint32_t bitmap_entrie_find(uint32_t size, int value, bitmap_t * bitmap)
 {
 	uint32_t i = 0;
 
-	while(i <= bitmap.size)
+	while(i <= bitmap->size)
 	{
-		if(bitmap.entries[i] == value)
+		if(bitmap->entries[i] == value)
 		{
 			uint32_t x = 0;
-			while(bitmap.entries[i + x] == value)
+			while(bitmap->entries[i + x] == value)
 			{
 				x++;
 				if(x >= size)
@@ -55,11 +53,11 @@ uint32_t bitmap_entrie_find(uint32_t size, int value, bitmap_t bitmap)
 	return -1;
 }
 
-void bitmap_map(uint32_t start, uint32_t end, int value, bitmap_t bitmap)
+void bitmap_map(uint32_t start, uint32_t end, int value, bitmap_t * bitmap)
 {
 	uint32_t i = start;
 
-	if(start < 0 || end > bitmap.size)
+	if(start < 0 || end > bitmap->size)
 	{
 		return;
 	}
@@ -71,25 +69,29 @@ void bitmap_map(uint32_t start, uint32_t end, int value, bitmap_t bitmap)
 	}
 }
 
+int bitmap_delete(bitmap_t * bitmap)
+{
+	kfree(bitmap);
+	return 1;
+}
+
 array_t * array_create(uint32_t order)
 {
-	//array_t * array = ponter_move_int(sizeof(array_t), 0, 1);
-	array_t * array = frame_alloc();
-	page_map(array, array, 3);
+	array_t * array = kmalloc(sizeof(array_t));
+	//page_map(array, array, 3);
 
 	array->start = NULL;
 	array->end = NULL;
 	array->size = 0;
-	array->order = order ? 1:0;
+	array->order = order ? 1:0; //0 is big to small, 1 is small to big
 
 	return array;
 }
 
 array_node_t * array_node_create(uint32_t index, void * value)
 {
-	//array_node_t * node = ponter_move_int(sizeof(array_node_t), 0, 1);
-	array_node_t * node = frame_alloc();
-	page_map(node, node, 3);
+	array_node_t * node = kmalloc(sizeof(array_node_t));
+	//page_map(node, node, 3);
 
 	node->next = NULL;
 	node->prev = NULL;
@@ -253,9 +255,7 @@ int array_node_delete(array_node_t * node)
 	node->next->prev = node->prev;
 	node->prev->next = node->next;
 
-	void * addr = page_physaddr(node);
-	page_unmap(node);
-	frame_free(addr);
+	kfree(node);
 
 	return 1;
 }
@@ -276,9 +276,7 @@ int array_delete(array_t * array)
 
 	if(array_node_delete(node))
 	{
-		void * addr = page_physaddr(array);
-		frame_free(addr);
-		page_unmap(array);
+		kfree(array);
 
 		return 1;
 	}
