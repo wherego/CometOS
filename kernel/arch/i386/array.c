@@ -75,211 +75,73 @@ int bitmap_delete(bitmap_t * bitmap)
 	return 1;
 }
 
-array_t * array_create(uint32_t order)
+//==============================| Array |==============================//
+
+array_t * array_create(void)
 {
 	array_t * array = kmalloc(sizeof(array_t));
-	//page_map(array, array, 3);
-
+	array->size = 0;
 	array->start = NULL;
 	array->end = NULL;
-	array->size = 0;
-	array->order = order ? 1:0; //0 is big to small, 1 is small to big
 
 	return array;
 }
 
-array_node_t * array_node_create(uint32_t index, void * value)
+void array_clear(array_t * array)
 {
-	array_node_t * node = kmalloc(sizeof(array_node_t));
-	//page_map(node, node, 3);
+	array_node_t * node = array->start;
 
-	node->next = NULL;
-	node->prev = NULL;
-	node->index = index;
-	node->value = value;
-
-	return node;
+	while(node)
+	{
+		array_node_t * node_next = node->next;
+		array_node_delete(node, array);
+		node = node_next;
+	}
 }
 
-array_node_t * array_node_find(uint32_t index, array_t * array)
+void array_delete(array_t * array)
 {
-	if(array == NULL || array->start == NULL)
-	{
+	array_clear(array);
+	kfree(array);
+}
+
+array_node_t * array_node_find(void * value, array_t * array)
+{
+	if (array->start == NULL)
 		return NULL;
-	}
 
 	array_node_t * node = array->start;
-	int end = 0;
-
-	if(array->order)
+	for (int i = 0; i <= array->size; ++i)
 	{
-		while(end == 0)
+		if(node->value == value)
 		{
-			if(node->index == index)
-			{
-				return node;
-			}
-			else if(node->index < index)
-			{
-				if(node->prev == NULL)
-				{
-					return NULL;
-				}
-
-				return node->prev;
-			}
-			
-			if (node->next != NULL)
-				node = node->next;
-			else
-				end = 1;
-		}
-	}
-	else
-	{
-		while(end == 0)
-		{
-			if(node->index >= index)
-			{
-				return node;
-			}
-			
-			if (node->next != NULL)
-				node = node->next;
-			else
-				end = 1;
-		}
-	}
-
-	return NULL;
-}
-
-array_node_t * array_node_sort(array_node_t * node, array_t * array)
-{
-	if (node == NULL || array == NULL)
-	{
-		return NULL;
-	}
-
-	array_node_t * index = array->start;
-	int end = 0;
-
-	if(array->order)
-	{
-		if(array->start == NULL)
-		{
-			array->start = node;
-			array->end = node;
-
 			return node;
-		}
-
-		while(end == 0)
-		{
-			if(node->index > index->index)
-			{
-				//found the spot
-				node->next = index;
-				node->prev = index->prev;
-
-				index->prev->next = node;
-				index->prev = node;
-
-				array->size ++;
-
-				return node;
-			}
-
-			if(index->next != NULL)
-				index = index->next;
-			else
-				end = 1;
-		}
-		//add to end
-		node->next = NULL;
-		node->prev = index;
-		index->next = node;
-
-		array->end = node;
-		array->size ++;
-
-		return node;
-	}
-	else
-	{
-		if(array->start == NULL)
-		{
-			array->start = node;
-			array->end = node;
-
-			return node;
-		}
-
-		while(end == 0)
-		{
-			if(node->index < index->index)
-			{
-				//found the spot
-				node->next = index;
-				node->prev = index->prev;
-
-				index->prev->next = node;
-				index->prev = node;
-
-				array->size ++;
-
-				printf("test");
-
-				return node;
-			}
-
-			if(index->next != NULL)
-				index = index->next;
-			else
-				end = 1;
-		}
-		//add to end
-		node->next = NULL;
-		node->prev = index;
-		index->next = node;
-
-		array->end = node;
-		array->size ++;
-
-		return node;
-	}
-}
-
-int array_node_delete(array_node_t * node)
-{
-	node->next->prev = node->prev;
-	node->prev->next = node->next;
-
-	kfree(node);
-
-	return 1;
-}
-
-int array_delete(array_t * array)
-{
-	array_node_t * node = array->start->next;
-
-	while(node->index != array->end->index)
-	{
-		if(!(array_node_delete(node->prev)))
-		{
-			return 0;
 		}
 
 		node = node->next;
 	}
 
-	if(array_node_delete(node))
-	{
-		kfree(array);
+	return NULL;
+}
 
-		return 1;
+void array_node_delete(array_node_t * node, array_t * array)
+{
+	kfree(node);
+	array->size--;
+}
+
+void array_node_insert(array_node_t * node, array_t * array)
+{
+	if (!array->end)
+	{
+		array->start = node;
+	}
+	else
+	{
+		array->end->next = node;
+		node->prev = array->end;
 	}
 
-	return 0;
+	array->end = node;
+	array->size++;
 }
