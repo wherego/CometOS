@@ -126,6 +126,36 @@ array_node_t * array_node_find(void * value, array_t * array)
 
 void array_node_delete(array_node_t * node, array_t * array)
 {
+	//if end node
+	if(node == array->end)
+	{
+		if(array->start == node)
+			array->end = NULL;
+		else
+		{
+			node->prev->next = NULL;
+			array->end = node->prev;
+		}
+	}
+
+	//if start node
+	if(node == array->start)
+	{
+		if(node->next)
+		{
+			array->start = node->next;
+		}
+		else
+			array->start = NULL;
+	}
+
+	//if not at start or end
+	if(node != array->end && node != array->start)
+	{
+		node->prev->next = node->next;
+		node->next->prev = node->prev;
+	}
+
 	kfree(node);
 	array->size--;
 }
