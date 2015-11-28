@@ -55,6 +55,18 @@ static inline uint32_t inport32(uint16_t port)
 }
 
 __attribute__((unused))
+static inline outportsl(unsigned short port, unsigned char * data, unsigned long size)
+{
+	asm volatile ("rep outsw" : "+S" (data), "+c" (size) : "d" (port));
+}
+
+__attribute__((unused))
+static inline inportsl(unsigned short port, unsigned char * data, unsigned long size)
+{
+	asm volatile ("rep insw" : "+D" (data), "+c" (size) : "d" (port) : "memory");
+}
+
+__attribute__((unused))
 static inline void io_wait(void)
 {
 	asm volatile("outb %%al, $0x80" : :"a"(0) );

@@ -6,8 +6,9 @@
 #include "../arch/i386/pit.h"
 
 const int FLOPPY_IRQ = 6;
+const int FDC_DMA_CHANNEL = 2;
 const int FLOPPY_SECTORS_PER_TRACK = 18;
-int DMA_BUFFER = 0x1000;
+int DMA_BUFFER = NULL;
 
 static uint8_t	CurrentDrive = 0;
 static volatile uint8_t FloppyDiskIRQ = 0;
@@ -17,31 +18,36 @@ void floppy_set_dma(int addr)
 	DMA_BUFFER = addr;
 }
 
-void floppy_dma_initialize(void)
+int floppy_dma_initialize(uint8_t* buffer, unsigned length)
 {
-	outport8(0x0a,0x06);
-	outport8(0xd8,0xff);
-	outport8(0x04, 0);
-	outport8(0x04, 0x10);
-	outport8(0xd8, 0xff);
-	outport8(0x05, 0xff);
-	outport8(0x05, 0x23);
-	outport8(0x80, 0);
-	outport8(0x0a, 0x02);
-}
+	union
+	{
+      uint8_t byte[4];//Lo[0], Mid[1], Hi[2]
+      unsigned long l;
+   }a, c;
 
-void floppy_dma_read(void)
-{
-	outport8(0x0a, 0x06);
-	outport8(0x0b, 0x56);
-	outport8(0x0a, 0x02);
-}
+   a.l = (unsigned)buffer;
+   c.l = (unsigned)length - 1;
 
-void floppy_dma_write(void)
-{
-	outport8(0x0a, 0x06);
-	outport8(0x0b, 0x5a);
-	outport8(0x0a, 0x02);
+   //Check for buffer issues
+   if ((a.l >> 24) || (c.l >> 16) || (((a.l & 0xffff)+c.l) >> 16))
+   {
+		return 0;
+   }
+
+   dma_reset (1);
+   dma_mask_channel( FDC_DMA_CHANNEL );//Mask channel 2
+   dma_reset_flipflop ( 1 );//Flipflop reset on DMA 1
+
+   dma_set_address( FDC_DMA_CHANNEL, a.byte[0],a.byte[1]);//Buffer address
+   dma_reset_flipflop( 1 );//Flipflop reset on DMA 1
+
+   dma_set_count( FDC_DMA_CHANNEL, c.byte[0],c.byte[1]);//Set count
+   dma_set_read ( FDC_DMA_CHANNEL );
+
+   dma_unmask_all( 1 );//Unmask channel 2
+
+   return 1;
 }
 
 uint8_t floppy_read_status(void)
@@ -215,7 +221,9 @@ void floppy_read_sector_imp(uint8_t head, uint8_t track, uint8_t sector)
 {
 	uint32_t st0, cyl;
 
-	floppy_dma_read();
+	//! initialize DMA
+	floppy_dma_initialize((uint8_t*) DMA_BUFFER, 512);
+	dma_set_read(FDC_DMA_CHANNEL);
 
 	floppy_send_command(FDC_CMD_READ_SECT | FDC_CMD_EXT_MULTITRACK | FDC_CMD_EXT_SKIP | FDC_CMD_EXT_DENSITY);
 	floppy_send_command(head << 2 | CurrentDrive);
@@ -275,7 +283,6 @@ void floppy_initialize(int irq)
 {
 	irq_install_handler(irq, floppy_irq);
 	floppy_set_dma(malloc(512));
-	floppy_dma_initialize();
 	floppy_reset();
 	floppy_drive_data(13, 1, 0xf, 1);
 	log_print(NOTICE, "FDC");

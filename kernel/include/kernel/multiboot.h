@@ -12,6 +12,7 @@
 #define MULTIBOOT_FLAG_LOADER 0x100
 #define MULTIBOOT_FLAG_APM 0x200
 #define MULTIBOOT_FLAG_VBE 0x400
+
 struct multiboot
 {
 uintptr_t flags;
@@ -39,6 +40,8 @@ uintptr_t vbe_interface_seg;
 uintptr_t vbe_interface_off;
 uintptr_t vbe_interface_len;
 } __attribute__((packed));
+
+uint32_t module_start;
 
 __attribute__((unused))
 static inline void multiboot_print(struct multiboot *mboot_ptr)
@@ -95,8 +98,9 @@ static inline void multiboot_print(struct multiboot *mboot_ptr)
 			uint32_t i;
 			for (i = 0; i < mboot_ptr->mods_count; ++i )
 			{
-				uint32_t module_start = *((uint32_t*)mboot_ptr->mods_addr + 8 * i);
+				module_start = *((uint32_t*)mboot_ptr->mods_addr + 8 * i);
 				uint32_t module_end = *(uint32_t*)(mboot_ptr->mods_addr + 8 * i + 4);
+				ponter_move_int(module_end - module_start, 0, 0);
 				printf("Module %d is at 0x%x:0x%x\n", i+1, module_start, module_end);
 			}
 		}

@@ -21,6 +21,7 @@
 #include "../arch/i386/task.h"
 #include "../arch/i386/array.h"
 #include "../arch/i386/liballoc.h"
+#include "../arch/i386/initrd.h"
 #endif
 
 uint32_t initial_esp;
@@ -38,6 +39,7 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	pic_initialize();
 	keyboard_install();
 	pit_install();
+	multiboot_print(mboot_ptr);
 	paging_initialize(mboot_ptr->mem_lower, mboot_ptr->mem_upper);
 
 	sti(); //turn on interupts
@@ -50,25 +52,25 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 #endif
 
 	#ifdef DEBUG
-		multiboot_print(mboot_ptr);
+		//multiboot_print(mboot_ptr);
 		printf("--------------------------------------------------\n");
 	#endif
 
 	printf("CometOS ver 0.0.0  -  time:%i:%i:%i\n",time_get(2), time_get(1), time_get(0));
 	printf("Hello, kernel World!\n");
 
-	uint8_t * sector = floppy_read(0);
-	printf("Sector:%x\n", sector);
+	extern uint32_t module_start;
+	initrd_initialize(module_start);
 
-	int i = 0;
-	for(int c = 0; c < 4; c++)
+	/*const char s[2] = "/";
+	char *token;
+	char * temp;
+	token = strtok_r(header->name, s, &temp);
+	while(token != NULL)
 	{
-		for(int j = 0; j < 128; j++)
-		{
-			printf("%x", sector[i + j]);
-			i += 128;
-		}
-	}
+		printf("%s | %s\n", token, temp);
+		token = strtok_r(NULL, s, &temp);
+	}*/
 
     for (;;); //main loop
 }

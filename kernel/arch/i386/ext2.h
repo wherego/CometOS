@@ -1,0 +1,6 @@
+#ifndef _COMETOS_ARCH_I386_EXT2_H
+#define _COMETOS_ARCH_I386_EXT2_H
+
+
+
+#endif

@@ -175,3 +175,13 @@ void array_node_insert(array_node_t * node, array_t * array)
 	array->end = node;
 	array->size++;
 }
+
+array_node_t * array_pop(array_t * array)
+{
+	if(!array->end)
+		return NULL;
+
+	array_node_t * node = array->end;
+	array_node_delete(array->end, array);
+	return node;
+}
