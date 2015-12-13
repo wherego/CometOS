@@ -1,13 +1,11 @@
 #include <string.h>
 
-char *strcpy(char *dest, const char *src)
+char* strcpy(char* restrict dstptr, const char* restrict srcptr)
 {
-	do
-    {
-      *dest++ = *src++;
-    }
-    
-    while (*src != 0);
-
-    return dest;
+	unsigned char* dst = (unsigned char*) dstptr;
+	const unsigned char* src = (const unsigned char*) srcptr;
+	int size = strlen(srcptr);
+	for(size_t i = 0; i < size; i++)
+		dst[i] = src[i];
+	return dstptr;
 }
