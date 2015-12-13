@@ -7,7 +7,8 @@ mkdir -p isodir/boot
 mkdir -p isodir/boot/grub
 
 cp sysroot/boot/cometos.kernel isodir/boot/cometos.kernel
-tar --verbose --create --file isodir/boot/cometos.initrd --directory=sysroot $(ls sysroot | grep -v boot)
+#tar --verbose --create --file isodir/boot/cometos.initrd --directory=sysroot $(ls sysroot | grep -v boot)
+genext2fs -d sysroot -q -b 512 isodir/boot/cometos.initrd
 cat > isodir/boot/grub/grub.cfg << EOF
 menuentry "cometos" {
 	multiboot /boot/cometos.kernel

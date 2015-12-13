@@ -1,7 +1,7 @@
 #ifndef _COMETOS_ARCH_I386_EXT2_H
 #define _COMETOS_ARCH_I386_EXT2_H
 
-#define EXT2_MAGIC = 0xEF53
+#define EXT2_MAGIC 0xEF53
 
 #define EXT2_STATE_CLEAN 1
 #define EXT2_STATE_ERROR 2
@@ -81,7 +81,7 @@ struct ext2_superblock
 	uint16_t ver_minor;
 	uint32_t con_time;
 	uint32_t con_interval;
-	uint32_t id;
+	uint32_t osid;
 	uint32_t ver_major;
 	uint16_t uid;
 	uint16_t gid;
@@ -155,7 +155,7 @@ struct ext2_inode_table
 	uint32_t block_total;
 	uint32_t flag;
 	uint32_t osid;
-	uint32_t pointer[15];
+	uint32_t block[15];
 	uint32_t gen;
 	uint32_t file_acl;
 	uint32_t dir_acl;
@@ -166,8 +166,12 @@ struct ext2_inode_table
 typedef struct ext2_inode_table ext2_inode_table_t;
 
 ext2_dir_entry_t * ext2_dir_getentry(ext2_inode_table_t * inode, uint32_t index);
-ext2_inode_table_t * ext2_inode_get(uint32_t inode, uintptr_t * inode_table,ext2_superblock_t * superblock);
+ext2_inode_table_t * ext2_inode_get(uint32_t inode, uintptr_t * inode_table, ext2_superblock_t * superblock);
 void * ext2_block_get(uint32_t block, uintptr_t * ext2_addr, ext2_superblock_t * superblock);
-void * ext2_addr_get(ext2_inode_table_t * inode, uint32_t block, ext2_superblock_t * superblock);
+void * ext2_addr_get(ext2_inode_table_t * inode, uint32_t block, uintptr_t * ext2_addr, ext2_superblock_t * superblock);
+int ext2_superblock_validate(ext2_superblock_t * superblock);
+int ext2_state_get(ext2_superblock_t * superblock);
+void ext2_error(ext2_superblock_t * superblock);
+int ext2_error_get(ext2_superblock_t * superblock);
 
 #endif

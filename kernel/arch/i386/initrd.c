@@ -6,7 +6,9 @@
 #include "../arch/i386/initrd.h"
 #include "../arch/i386/log.h"
 #include "../arch/i386/array.h"
+#include "../arch/i386/ext2.h"
 
+ext2_superblock_t * initrd_superblock;
 file_t * initrd_root;
 
 void initrd_initialize(void * addr)
@@ -30,6 +32,7 @@ void initrd_initialize(void * addr)
 	initrd_root->impl = 0;
 
 	log_print(NOTICE, "Initrd");
+	initrd_superblock = (ext2_superblock_t *)((uintptr_t)addr + EXT2_BLOCK_SIZE_MIN);
 }
 
 uint32_t initrd_read(file_t *node, uint32_t offset, uint32_t size, uint8_t *buffer)
