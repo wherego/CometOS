@@ -1,6 +1,5 @@
+#include <kernel/ui/log.h>
 #include <kernel/portio.h>
-#include "../arch/i386/log.h"
-#include "../arch/i386/task.h"
 
 volatile long timer_ticks = 0;
 volatile unsigned long ticker = 0;

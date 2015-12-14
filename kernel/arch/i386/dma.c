@@ -1,9 +1,10 @@
 #include <stdint.h>
 
+#include <kernel/ui/log.h>
 #include <kernel/portio.h>
-#include "../arch/i386/dma.h"
-#include "../arch/i386/log.h"
-#include "../arch/i386/pit.h"
+
+#include "dma.h"
+#include "pit.h"
 
 void dma_mask_channel(uint8_t channel)
 {

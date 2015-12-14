@@ -1,7 +1,7 @@
 #include <stdint.h>
 
+#include <kernel/ui/log.h>
 #include <kernel/portio.h>
-#include "../arch/i386/log.h"
 
 const uint16_t PIC_MASTER = 0x20;
 const uint16_t PIC_SLAVE = 0xA0;

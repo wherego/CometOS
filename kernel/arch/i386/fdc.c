@@ -1,9 +1,10 @@
 #include <stdint.h>
 
+#include <kernel/ui/log.h>
 #include <kernel/portio.h>
-#include "../arch/i386/fdc.h"
-#include "../arch/i386/log.h"
-#include "../arch/i386/pit.h"
+
+#include "fdc.h"
+#include "pit.h"
 
 const int FLOPPY_IRQ = 6;
 const int FDC_DMA_CHANNEL = 2;
