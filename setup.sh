@@ -16,6 +16,19 @@ function clone
 	chmod -R 755 *
 }
 
+function toolchain_download
+{
+	#Download apt-get stuff
+	echo -e "\e[33m Downloading Packages ...\e[37m"
+	apt-get install libgmp3-dev libmpfr-dev libisl-dev libmpc-dev texinfo qemu gcc g++ genext2fs make
+
+	echo -e "\e[33m Downloading Toolchain ...\e[37m"
+	cd /$HOME
+	sudo wget -O cometos-toolchain.tar.gz https://googledrive.com/host/0B5_PgYahYySfbXFfQ3N4cC1RbW8
+	tar -zxvf cometos-toolchain.tar.gz
+	rm cometos-toolchain.tar.gz
+}
+
 function toolchain
 {
 	#Download apt-get stuff
@@ -103,7 +116,7 @@ echo -e "\e[1;33m- GCC, GNU Make, GNU Bison, GNU GMP, GNU MPFR, GNU MPC, Flex, g
 
 #Main Menu
 PS3='Please enter your choice: '
-options=("All" "Clone CometOS" "Build & install toolchain" "Quit")
+options=("All" "Clone CometOS" "Download toolchain" "Build & install toolchain" "Quit")
 select opt in "${options[@]}"
 do
     case $opt in
@@ -116,6 +129,12 @@ do
         "Clone CometOS")
             echo -e "\e[91m Cloneing CometOS \e[37m"
             clone
+            echo -e "\e[32m Complete - 100% \e[37m"
+            exit
+            ;;
+        "Download toolchain")
+            echo -e "\e[91m Downloading toolchain \e[37m"
+            toolchain_download
             echo -e "\e[32m Complete - 100% \e[37m"
             exit
             ;;
