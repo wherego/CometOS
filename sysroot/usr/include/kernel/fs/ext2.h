@@ -3,6 +3,11 @@
 
 #define EXT2_MAGIC 0xEF53
 
+#define EXT2_SUPERBLOCK_OFFSET 1024
+
+#define EXT2_INODE_ROOT 2
+#define EXT2_INODE_BLOCK_TOTAL 12
+
 #define EXT2_STATE_CLEAN 1
 #define EXT2_STATE_ERROR 2
 
@@ -46,7 +51,9 @@
 #define EXT2_IWOTH	0x0002
 #define EXT2_IXOTH	0x0001
 
-enum
+#define EXT2_BLOCKSIZE_GET(sb) (EXT2_BLOCK_SIZE_MIN << (sb)->block_size_log)
+
+enum EXT2_FILE_TYPE
 {
 	EXT2_FILE_UNKNOWN = 0,
 	EXT2_FILE_REG_FILE = 1,
@@ -115,8 +122,6 @@ struct ext2_superblock
 	uint8_t unused4[760];
 } __attribute__ ((packed));
 
-typedef struct ext2_superblock ext2_superblock_t;
-
 struct ext2_dir_entry
 {
 	uint32_t inode;
@@ -124,8 +129,6 @@ struct ext2_dir_entry
 	uint16_t name_len;
 	char name[];
 } __attribute__ ((packed));
-
-typedef struct ext2_dir_entry ext2_dir_entry_t;
 
 struct ext2_blockgroup_descriptor
 {
@@ -139,9 +142,7 @@ struct ext2_blockgroup_descriptor
 	uint8_t rev[12];
 } __attribute__ ((packed));
 
-typedef struct ext2_blockgroup_descriptor ext2_bg_descriptor_t;
-
-struct ext2_inode_table
+struct ext2_inode
 {
 	uint16_t type;
 	uint16_t uid;
@@ -155,7 +156,8 @@ struct ext2_inode_table
 	uint32_t block_total;
 	uint32_t flag;
 	uint32_t osid;
-	uint32_t block[15];
+	uint32_t block[12];
+	uint32_t block_indirect[2];
 	uint32_t gen;
 	uint32_t file_acl;
 	uint32_t dir_acl;
@@ -163,15 +165,22 @@ struct ext2_inode_table
 	uint8_t osid_extra[12];
 } __attribute__ ((packed));
 
-typedef struct ext2_inode_table ext2_inode_table_t;
+typedef struct
+{
+	struct ext2_superblock * superblock;
+} __attribute__ ((packed)) ext2_t;
 
-ext2_dir_entry_t * ext2_dir_getentry(ext2_inode_table_t * inode, uint32_t index);
-ext2_inode_table_t * ext2_inode_get(uint32_t inode, uintptr_t * inode_table, ext2_superblock_t * superblock);
-void * ext2_block_get(uint32_t block, uintptr_t * ext2_addr, ext2_superblock_t * superblock);
-void * ext2_addr_get(ext2_inode_table_t * inode, uint32_t block, uintptr_t * ext2_addr, ext2_superblock_t * superblock);
-int ext2_superblock_validate(ext2_superblock_t * superblock);
-int ext2_state_get(ext2_superblock_t * superblock);
-void ext2_error(ext2_superblock_t * superblock);
-int ext2_error_get(ext2_superblock_t * superblock);
+struct ext2_superblock * ext2_superblock_get(void * addr);
+int ext2_superblock_validate(struct ext2_superblock * superblock);
+int ext2_state_get(struct ext2_superblock * superblock);
+void ext2_error(struct ext2_superblock * superblock);
+int ext2_error_get(struct ext2_superblock* superblock);
+uint32_t ext2_inode_typetofile(struct ext2_inode * inode);
+void * ext2_blockgroup_get(uint32_t blockgroup, struct ext2_superblock * superblock);
+struct ext2_blockgroup_descriptor * ext2_bg_des_get(uint32_t blockgroup, struct ext2_superblock * superblock);
+struct ext2_inode * ext2_inode_get(uint32_t inode, struct ext2_superblock * superblock);
+void * ext2_inodeblock_get(uint32_t block, struct ext2_inode * inode, struct ext2_superblock * superblock);
+void * ext2_block_get(uint32_t block, struct ext2_superblock * superblock);
+struct ext2_dir_entry * ext2_direntry_get(uint32_t index, struct ext2_inode * inode, struct ext2_superblock * superblock);
 
 #endif
