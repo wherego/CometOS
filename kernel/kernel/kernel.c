@@ -41,6 +41,11 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	idt_initialize();
 	pic_initialize();
 	pit_install();
+	if((uint32_t)mboot_ptr->mem_upper > 0x1)
+	{
+		log_print(ERROR, "---- MEM LARGER THEN 4GB ----\nPAE is not enabled");
+		kernel_hang();
+	}
 	paging_initialize(mboot_ptr->mem_lower, mboot_ptr->mem_upper);
 
 	sti(); //turn on interupts
@@ -48,8 +53,10 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 		log_print(INFO, "Interupts On");
 	#endif
 
-	floppy_initialize(6);
-	floppy_drive_set(0);
+	#ifdef FLOPPY
+		floppy_initialize(6);
+		floppy_drive_set(0);
+	#endif
 #endif
 
 	multiboot_print(mboot_ptr);
@@ -66,4 +73,5 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 void kernel_hang(void)
 {
 	log_print(CRIT, "Kernel hlt");
+	asm("hlt");
 }
