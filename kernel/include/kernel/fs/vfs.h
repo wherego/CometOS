@@ -46,7 +46,7 @@ struct dir_entry
     uint32_t inode;     // inode number. Required by POSIX.
 };
 
-extern file_t *fs_root; // The root of the filesystem.
+file_t *fs_root; // The root of the filesystem.
 
 uint32_t vfs_read(file_t *node, uint32_t offset, uint32_t size, uint8_t *buffer);
 uint32_t vfs_write(file_t *node, uint32_t offset, uint32_t size, uint8_t *buffer);

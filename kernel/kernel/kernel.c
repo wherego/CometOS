@@ -61,9 +61,9 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 
 	multiboot_print(mboot_ptr);
 	keyboard_install();
-	void wait();
 	extern uint32_t module_start;
 	initrd_initialize(module_start);
+	fs_root = initrd_root;
 
 	printf("CometOS ver 0.0.0  -  time:%i:%i:%i\n",time_get(2), time_get(1), time_get(0));
 	printf("Hello, kernel World!\n");

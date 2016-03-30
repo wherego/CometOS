@@ -8,8 +8,6 @@
 #include "../arch/i386/mem/paging.h"
 #endif
 
-file_t *fs_root = 0;
-
 uint32_t vfs_read(file_t *node, uint32_t offset, uint32_t size, uint8_t *buffer)
 {
 	if(node->read != 0)

@@ -11,9 +11,6 @@
 #include "../arch/i386/mem/paging.h"
 #endif
 
-file_t * initrd_root;
-ext2_t * ext2_initrd;
-
 void initrd_initialize(void * addr)
 {
 	ext2_initrd->superblock = ext2_superblock_get(addr);
@@ -50,11 +47,11 @@ void initrd_initialize(void * addr)
 		printf("SuperBlock: 0x%x\n", ext2_initrd->superblock);
 		printf("superblock Validate: %s\n", ext2_superblock_validate(ext2_initrd->superblock)?"Yes":"No");
 		
-		file_t * file = initrd_finddir(initrd_root, "test.txt");
+		file_t * file = vfs_finddir(initrd_root, "test.txt");
 		if(file)
 		{
 			char * buffer = kmalloc(file->size);
-			uint32_t read = initrd_read(file, 0, file->size, buffer);
+			uint32_t read = vfs_read(file, 0, file->size, buffer);
 
 			if(read)
 			{
