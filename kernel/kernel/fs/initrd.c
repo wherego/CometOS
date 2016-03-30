@@ -51,26 +51,32 @@ void initrd_initialize(void * addr)
 		printf("superblock Validate: %s\n", ext2_superblock_validate(ext2_initrd->superblock)?"Yes":"No");
 		
 		file_t * file = initrd_finddir(initrd_root, "test.txt");
-		char * buffer = kmalloc(file->size);
-		uint32_t read = initrd_read(file, 0, file->size, buffer);
-
-		if(file && read)
+		if(file)
 		{
-			printf("-- Finding test file - test.txt --\n");
-			printf("file name: %s\n", file->name);
-			printf("file uid: %i\n", file->uid);
-			printf("file gid: %i\n", file->gid);
-			printf("file flag: %i\n", file->flag);
-			printf("file inode: %i\n", file->inode);
-			printf("file size(bytes): %i\n", file->size);
-			printf("file impl: %i\n", file->impl);
+			char * buffer = kmalloc(file->size);
+			uint32_t read = initrd_read(file, 0, file->size, buffer);
 
-			printf("===== Contents =====\n");
-			printf("%s\n", buffer);
-			printf("====================\n");
+			if(read)
+			{
+				printf("-- Finding test file - test.txt --\n");
+				printf("file name: %s\n", file->name);
+				printf("file uid: %i\n", file->uid);
+				printf("file gid: %i\n", file->gid);
+				printf("file flag: %i\n", file->flag);
+				printf("file inode: %i\n", file->inode);
+				printf("file size(bytes): %i\n", file->size);
+				printf("file impl: %i\n", file->impl);
+
+				printf("===== Contents =====\n");
+				printf("%s\n", buffer);
+				printf("====================\n");
+				kfree(buffer);
+			}
+			else
+				printf("Test file read failed testing\n");
 		}
 		else
-			printf("Test file failed testing\n");
+			printf("Could not find test file\n");
 
 		printf("#######################################################\n");
 	#endif
