@@ -3,6 +3,7 @@
 
 #include <kernel/fs/vfs.h>
 #include <kernel/fs/ext2.h>
+#include <kernel/ui/log.h>
 
 struct ext2_superblock * ext2_superblock_get(void * addr)
 {
@@ -23,16 +24,6 @@ int ext2_superblock_validate(struct ext2_superblock * superblock)
 		return 1;
 	else
 		return 0;
-}
-
-int ext2_state_get(struct ext2_superblock * superblock)
-{
-	if(superblock->state == EXT2_STATE_CLEAN)
-		return EXT2_STATE_CLEAN;
-	else if(superblock->state == EXT2_STATE_ERROR)
-		return EXT2_STATE_ERROR;
-
-	return 0;
 }
 
 char ext2_osid_get(struct ext2_superblock * superblock)
@@ -68,37 +59,18 @@ void ext2_error(struct ext2_superblock * superblock)
 	switch(superblock->error)
 	{
 		case EXT2_ERROR_IGNORE:
-		//Ignore
+			//Ignore
 		break;
 
 		case EXT2_ERROR_REMOUNT:
-		//Remount
+			//Remount
 		break;
 
 		case EXT2_ERROR_PANIC:
-		//Panic ...
+			log_print(CRIT, "Ext2 superblock panic error");
+			asm("hlt");
 		break;
 	}
-}
-
-int ext2_error_get(struct ext2_superblock * superblock)
-{
-	switch(superblock->error)
-	{
-		case EXT2_ERROR_IGNORE:
-			return EXT2_ERROR_IGNORE; //Ignore
-		break;
-
-		case EXT2_ERROR_REMOUNT:
-			return EXT2_ERROR_REMOUNT; //Remount
-		break;
-
-		case EXT2_ERROR_PANIC:
-			return EXT2_ERROR_PANIC; //Panic ...
-		break;
-	}
-
-	return 0;
 }
 
 uint32_t ext2_inode_typetofile(struct ext2_inode * inode)
@@ -225,4 +197,38 @@ struct ext2_dir_entry * ext2_direntry_get(uint32_t index, struct ext2_inode * in
 			return (struct ext2_dir_entry *)((uintptr_t)block + offset);
 
 	return NULL;
+}
+
+uint32_t ext2_read(uint32_t offset, void * buffer, uint32_t size, struct ext2_inode * inode, struct ext2_superblock * superblock)
+{
+	if(!buffer || !inode || !superblock)
+		return 0;
+
+	uint32_t index = size;
+	uint32_t block = 0;
+	uint32_t block_offset = 0;
+
+	if(offset)
+	{
+		block = offset / EXT2_BLOCKSIZE_GET(superblock);
+		block_offset = offset % EXT2_BLOCKSIZE_GET(superblock);
+	}
+
+	while(1)
+	{
+		void * addr = ext2_inodeblock_get(block, inode, superblock);
+
+		if(index <= (EXT2_BLOCKSIZE_GET(superblock) - block_offset))
+		{
+			memcpy(buffer, addr + block_offset, index);
+			break;
+		}
+
+		memcpy(buffer, addr + block_offset, EXT2_BLOCKSIZE_GET(superblock) - block_offset);
+		block++;
+		index -= EXT2_BLOCKSIZE_GET(superblock) - block_offset;
+		block_offset = 0;
+	}
+
+	return size;
 }

@@ -41,7 +41,7 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	idt_initialize();
 	pic_initialize();
 	pit_install();
-	if((uint32_t)mboot_ptr->mem_upper > (8 * (1024 * 3)) * 4)
+	if((uint32_t)mboot_ptr->mem_upper > 0xEE6B2800)
 	{
 		log_print(ERROR, "---- MEM LARGER THEN 4GB ----\nPAE is not enabled");
 		kernel_hang();
@@ -61,6 +61,7 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 
 	multiboot_print(mboot_ptr);
 	keyboard_install();
+	void wait();
 	extern uint32_t module_start;
 	initrd_initialize(module_start);
 

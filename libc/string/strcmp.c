@@ -15,4 +15,6 @@ int strcmp(char *a, char *b)
 
 		i++;
 	}
+
+	return 0;
 }

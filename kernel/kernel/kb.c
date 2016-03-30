@@ -24,9 +24,12 @@ unsigned short kb_ltmp;
 volatile int kb_shift_flag=0;
 volatile int kb_caps_flag=0;
 
+int wait_set = 0;
+
 /* Handles the keyboard interrupt */
 void keyboard_handler(struct interrupt_context* int_ctx)
 {
+    wait_set = 0;
     unsigned char scancode;
 
     /* Read from the keyboard's data buffer */
@@ -144,4 +147,13 @@ void keyboard_install()
 {
     irq_install_handler(1, keyboard_handler);
     log_print(NOTICE, "Keyboard");
+}
+
+void wait()
+{
+  wait_set = 1;
+  while(wait)
+  {
+    //nothing
+  }
 }

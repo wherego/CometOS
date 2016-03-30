@@ -127,7 +127,7 @@ struct ext2_dir_entry
 	uint32_t inode;
 	uint16_t rec_len;
 	uint16_t name_len;
-	char name[];
+	char name[128];
 } __attribute__ ((packed));
 
 struct ext2_blockgroup_descriptor
@@ -172,9 +172,7 @@ typedef struct
 
 struct ext2_superblock * ext2_superblock_get(void * addr);
 int ext2_superblock_validate(struct ext2_superblock * superblock);
-int ext2_state_get(struct ext2_superblock * superblock);
 void ext2_error(struct ext2_superblock * superblock);
-int ext2_error_get(struct ext2_superblock* superblock);
 uint32_t ext2_inode_typetofile(struct ext2_inode * inode);
 void * ext2_blockgroup_get(uint32_t blockgroup, struct ext2_superblock * superblock);
 struct ext2_blockgroup_descriptor * ext2_bg_des_get(uint32_t blockgroup, struct ext2_superblock * superblock);
@@ -182,5 +180,6 @@ struct ext2_inode * ext2_inode_get(uint32_t inode, struct ext2_superblock * supe
 void * ext2_inodeblock_get(uint32_t block, struct ext2_inode * inode, struct ext2_superblock * superblock);
 void * ext2_block_get(uint32_t block, struct ext2_superblock * superblock);
 struct ext2_dir_entry * ext2_direntry_get(uint32_t index, struct ext2_inode * inode, struct ext2_superblock * superblock);
+uint32_t ext2_read(uint32_t offset, void * buffer, uint32_t size, struct ext2_inode * inode, struct ext2_superblock * superblock);
 
 #endif

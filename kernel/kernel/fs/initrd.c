@@ -17,6 +17,9 @@ ext2_t * ext2_initrd;
 void initrd_initialize(void * addr)
 {
 	ext2_initrd->superblock = ext2_superblock_get(addr);
+	if(ext2_initrd->superblock->state == EXT2_STATE_ERROR)
+		ext2_error(ext2_initrd->superblock);
+
 	struct ext2_inode * inode = ext2_inode_get(EXT2_INODE_ROOT, ext2_initrd->superblock);
 
 	#ifdef DEBUG
@@ -46,6 +49,29 @@ void initrd_initialize(void * addr)
 		printf("####################| EXT2 Debug | ####################\n");
 		printf("SuperBlock: 0x%x\n", ext2_initrd->superblock);
 		printf("superblock Validate: %s\n", ext2_superblock_validate(ext2_initrd->superblock)?"Yes":"No");
+		
+		file_t * file = initrd_finddir(initrd_root, "test.txt");
+		char * buffer = kmalloc(file->size);
+		uint32_t read = initrd_read(file, 0, file->size, buffer);
+
+		if(file && read)
+		{
+			printf("-- Finding test file - test.txt --\n");
+			printf("file name: %s\n", file->name);
+			printf("file uid: %i\n", file->uid);
+			printf("file gid: %i\n", file->gid);
+			printf("file flag: %i\n", file->flag);
+			printf("file inode: %i\n", file->inode);
+			printf("file size(bytes): %i\n", file->size);
+			printf("file impl: %i\n", file->impl);
+
+			printf("===== Contents =====\n");
+			printf("%s\n", buffer);
+			printf("====================\n");
+		}
+		else
+			printf("Test file failed testing\n");
+
 		printf("#######################################################\n");
 	#endif
 
@@ -54,7 +80,8 @@ void initrd_initialize(void * addr)
 
 uint32_t initrd_read(file_t *node, uint32_t offset, uint32_t size, uint8_t *buffer)
 {
-
+	struct ext2_inode * inode = ext2_inode_get(node->inode, ext2_initrd->superblock);
+	return ext2_read(offset, buffer, size, inode, ext2_initrd->superblock);
 }
 
 struct dir_entry * initrd_readdir(file_t *node, uint32_t index)
@@ -77,6 +104,50 @@ struct dir_entry * initrd_readdir(file_t *node, uint32_t index)
 	return dir_entry;
 }
 
-file_t *initrd_finddir(file_t *node, char *name)
+file_t * initrd_finddir(file_t *node, char *name)
 {
+	struct ext2_inode * inode = ext2_inode_get(node->inode, ext2_initrd->superblock);
+	void * block = (void *)ext2_inodeblock_get(0, inode, ext2_initrd->superblock);
+	uint32_t index = 0;
+
+	if(!node || !(inode->type & EXT2_IFDIR) || !block)
+		return NULL;
+
+	while(index < inode->size)
+	{
+		struct ext2_dir_entry * ent = (struct ext2_dir_entry *)((uintptr_t)block + index);
+
+		if(strlen(name) == ent->name_len && !strcmp(&ent->name, name))
+		{
+			inode = ext2_inode_get(ent->inode, ext2_initrd->superblock);
+
+			//Setup file
+			file_t * file = (file_t *)kmalloc(sizeof(file_t));
+
+			if(strlen(ent->name) > 128) // check that name is not too long
+				return NULL;
+
+			strcpy(&file->name, &ent->name);
+			file->mask = inode->type & 0xFFF;
+			file->uid = inode->uid;
+			file->gid = inode->gid;
+			file->inode = ent->inode;
+			file->flag |= ext2_inode_typetofile(inode);
+			file->size = inode->size;
+			file->read = &initrd_read;
+			file->write = NULL;
+			file->open = NULL;
+			file->close = NULL;
+			file->readdir = &initrd_readdir;
+			file->finddir = &initrd_finddir;
+			file->ptr = NULL;
+			file->impl = NULL;
+
+			return file;
+		}
+
+		index += ent->rec_len;
+	}
+
+	return NULL;
 }
