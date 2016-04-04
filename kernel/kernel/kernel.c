@@ -9,6 +9,7 @@
 #include <kernel/multiboot.h>
 #include <kernel/portio.h>
 #include <kernel/kb.h>
+#include <kernel/spinlock.h>
 
 #if defined(__i386__)
 #include "../arch/i386/irq/idt.h"
@@ -21,6 +22,8 @@
 #include "../arch/i386/time.h"
 #include "../arch/i386/pit.h"
 #endif
+
+#define MAX_MEM 0xEE6B2800
 
 uint32_t initial_esp;
 
@@ -41,7 +44,7 @@ void kernel_main(struct multiboot *mboot_ptr, uint32_t initial_stack)
 	idt_initialize();
 	pic_initialize();
 	pit_install();
-	if((uint32_t)mboot_ptr->mem_upper > 0xEE6B2800)
+	if((uint32_t)mboot_ptr->mem_upper > MAX_MEM)
 	{
 		log_print(ERROR, "---- MEM LARGER THEN 4GB ----\nPAE is not enabled");
 		kernel_hang();
