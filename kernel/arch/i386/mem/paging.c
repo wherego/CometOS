@@ -143,7 +143,7 @@ void paging_initialize(uint32_t mem_lower, uint32_t mem_upper)
   i = 0;
   while(i < kernel_pointer)
   {
-    page_map(i, i, 3);
+    page_map(i, i, 3, NULL);
     i += PAGE_SIZE_HEX;
   }
 
@@ -247,12 +247,6 @@ void * directory_create(uint32_t flags)
 
 void directory_remove(void * directory_addr)
 {
-  uint32_t dir = directory_get();
-  if(dir == directory_addr)
-  {
-    return NULL;
-  }
-
   frame_free(directory_addr);
 }
 
@@ -274,14 +268,19 @@ void * directory_copy(void * directory, void * copy)
     return (void *)copy;
 }
 
-void * page_map(void * physaddr, void * virtualaddr, unsigned int flags)
+void * page_map(void * physaddr, void * virtualaddr, unsigned int flags, void * page_dir)
 {
   if (((unsigned int)virtualaddr & 0xFFF) || ((unsigned int)physaddr & 0xFFF))
   {
     return NULL;
   }
 
-  uint32_t * pd = directory_get();
+  uint32_t * pd;
+  if(page_dir)
+    pd = (uint32_t *)page_dir;
+  else
+    pd = directory_get();
+
   uint32_t pdindex = DIR_GET((uint32_t)virtualaddr);
 
   if((((unsigned int)pd[pdindex]) & USED) != USED)
@@ -304,14 +303,19 @@ void * page_map(void * physaddr, void * virtualaddr, unsigned int flags)
   return (void *)virtualaddr;
 }
 
-int page_unmap(void * virtualaddr)
+int page_unmap(void * virtualaddr, void * page_dir)
 {
   if((unsigned int)virtualaddr & 0xFFF)
   {
     return 0;
   }
 
-  uint32_t * pd = directory_get();
+  uint32_t * pd;
+  if(page_dir)
+    pd = (uint32_t *)page_dir;
+  else
+    pd = directory_get();
+
   uint32_t pdindex = DIR_GET((uint32_t)virtualaddr);
 
   if((((unsigned int)pd[pdindex]) & USED) != USED)
@@ -332,14 +336,19 @@ int page_unmap(void * virtualaddr)
   return 1;
 }
 
-void * page_physaddr(void * virtualaddr)
+void * page_physaddr(void * virtualaddr, void * page_dir)
 {
   if((unsigned int)virtualaddr & 0xFFF)
   {
     return NULL;
   }
 
-  uint32_t * pd = directory_get();
+  uint32_t * pd;
+  if(page_dir)
+    pd = (uint32_t *)page_dir;
+  else
+    pd = directory_get();
+
   uint32_t pdindex = DIR_GET((uint32_t)virtualaddr);
 
   if((((unsigned int)pd[pdindex]) & USED) != USED)

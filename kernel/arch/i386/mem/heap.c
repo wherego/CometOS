@@ -62,15 +62,15 @@ void * heap_alloc(size_t size, heap_t * heap)
 	uint32_t i = addr;
 	while(i < addr + number)
 	{
-		volatile void * page = page_map(frame_alloc(), i, 3);
+		volatile void * page = page_map(frame_alloc(), i, 3, NULL);
 		if(page == NULL)
 		{
 			i -= page_getsize();
 			while(i > addr)
 			{
-				void * phyaddr = page_physaddr(i);
+				void * phyaddr = page_physaddr(i, NULL);
 				frame_free(phyaddr);
-				page_unmap(i);
+				page_unmap(i, NULL);
 				i -= page_getsize();
 			}
 
@@ -101,8 +101,8 @@ int heap_free(void * addr, size_t size, heap_t * heap)
 	uint32_t i = (uint32_t)addr;
 	while(i < addr + number)
 	{
-		frame_free(page_physaddr(i));
-		page_unmap(i);
+		frame_free(page_physaddr(i, NULL));
+		page_unmap(i, NULL);
 		i -= page_getsize();
 	}
 

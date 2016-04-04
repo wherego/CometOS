@@ -24,9 +24,9 @@ void directory_load(void * addr);
 void * directory_copy(void * directory, void * copy);
 
 void paging_initialize(uint32_t mem_lower, uint32_t mem_upper);
-void * page_map(void * physaddr, void * virtualaddr, unsigned int flags);
-int page_unmap(void * virtualaddr);
-void * page_physaddr(void * virtualaddr);
+void * page_map(void * physaddr, void * virtualaddr, unsigned int flags, void * page_dir);
+int page_unmap(void * virtualaddr, void * page_dir);
+void * page_physaddr(void * virtualaddr, void * page_dir);
 uint32_t page_getsize(void);
 
 int liballoc_lock();
