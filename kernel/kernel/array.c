@@ -188,3 +188,83 @@ array_node_t * array_pop(array_t * array)
 	array_node_delete(array->end, array);
 	return node;
 }
+
+tree_t * tree_create(void)
+{
+	tree_t * tree = (tree_t *)kmalloc(sizeof(tree_t));
+	tree->root = NULL;
+	tree->size = 0;
+	return tree;
+}
+
+void tree_delete(tree_t * tree)
+{
+	tree_clear(tree);
+	kfree(tree);
+}
+
+void tree_clear(tree_t * tree)
+{
+	if(tree)
+		tree_node_delete(tree->root, tree);
+}
+
+void tree_node_delete(tree_node_t * node, tree_t * tree)
+{
+	tree_node_t * index = node;
+	if(!node || !tree || !tree->root)
+		return;
+
+	while(1)
+	{
+		if(index->children)
+		{
+			tree_node_t * temp = index->children->end->value ;
+			if(temp->children)
+				index = temp->value;
+			else if(index->children->size)
+				array_node_delete(index->children->end, index->children);
+			else
+				array_delete(index->children);
+		}
+		else
+		{
+			if(index == node)
+				break;
+
+			tree_t * temp = index->parent;
+			tree_node_delete(index, tree);
+			index = temp;
+		}
+	}
+
+	if(node == tree->root)
+		tree->root = NULL;
+
+	tree_node_delete(index, tree);
+}
+
+void tree_node_insert(tree_node_t * node, tree_node_t * parent, tree_t * tree)
+{
+	if(!node || !tree)
+		return;
+
+	if(parent == NULL)
+	{
+		tree->root = node;
+		return;
+	}
+	
+	if(!parent->children)
+		parent->children = array_create();
+
+	array_node_t * array_node = kmalloc(sizeof(array_node_t));
+	array_node->value = node;
+	node->parent = parent;
+	array_node_insert(node, parent->children);
+}
+
+tree_node_t * tree_node_find(void * value, tree_t * tree)
+{
+	
+}
