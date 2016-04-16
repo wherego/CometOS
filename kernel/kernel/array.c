@@ -205,43 +205,30 @@ void tree_delete(tree_t * tree)
 
 void tree_clear(tree_t * tree)
 {
-	if(tree)
+	if(!tree)
+		return;
+
 		tree_node_delete(tree->root, tree);
 }
 
 void tree_node_delete(tree_node_t * node, tree_t * tree)
 {
-	tree_node_t * index = node;
 	if(!node || !tree || !tree->root)
 		return;
 
-	while(1)
+	if(node->children && node->children->size == 0)
 	{
-		if(index->children)
-		{
-			tree_node_t * temp = index->children->end->value ;
-			if(temp->children)
-				index = temp->value;
-			else if(index->children->size)
-				array_node_delete(index->children->end, index->children);
-			else
-				array_delete(index->children);
-		}
-		else
-		{
-			if(index == node)
-				break;
+		array_foreach(child, node->children)
+			((tree_node_t *)child->value)->parent = node->parent;
 
-			tree_t * temp = index->parent;
-			tree_node_delete(index, tree);
-			index = temp;
-		}
+		if(node->value)
+			kfree(node->value);
+
+		array_delete(node->children);
 	}
 
-	if(node == tree->root)
-		tree->root = NULL;
-
-	tree_node_delete(index, tree);
+	kfree(node);
+	tree->size--;
 }
 
 void tree_node_insert(tree_node_t * node, tree_node_t * parent, tree_t * tree)
@@ -249,7 +236,7 @@ void tree_node_insert(tree_node_t * node, tree_node_t * parent, tree_t * tree)
 	if(!node || !tree)
 		return;
 
-	if(parent == NULL)
+	if(!parent)
 	{
 		tree->root = node;
 		return;
@@ -261,10 +248,6 @@ void tree_node_insert(tree_node_t * node, tree_node_t * parent, tree_t * tree)
 	array_node_t * array_node = kmalloc(sizeof(array_node_t));
 	array_node->value = node;
 	node->parent = parent;
-	array_node_insert(node, parent->children);
-}
-
-tree_node_t * tree_node_find(void * value, tree_t * tree)
-{
-	
+	array_node_insert(array_node, parent->children);
+	tree->size++;
 }

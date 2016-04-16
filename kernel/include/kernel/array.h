@@ -3,6 +3,9 @@
 
 #include <stdbool.h>
 
+#define array_foreach(item, array) \
+    for(array_node_t * item = array->start; item; item = item->next)
+
 typedef struct
 {
 	uintptr_t *entries;
@@ -61,6 +64,5 @@ void tree_clear(tree_t * tree);
 
 void tree_node_delete(tree_node_t * node, tree_t * tree);
 void tree_node_insert(tree_node_t * node, tree_node_t * parent, tree_t * tree);
-tree_node_t * tree_node_find(void * value, tree_t * tree);
 
 #endif
